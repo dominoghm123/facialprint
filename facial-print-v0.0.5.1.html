@@ -350,29 +350,28 @@
         'use strict';
 
         const CFG = {
-            MIN_SH: 0.008,
-            GAMMA: 1.45,
-            RADIUS_MAX: 1.45,
-            RADIUS_THRESHOLD: 0.01,
-            RADIUS_EXP: 1.6,
-            SPREAD_BASE: 30.0,
-            SPREAD_FEAT: 1.5,
-            MIN_CNT: 80,
-            EXTRA: 320,
-            FRAME_H: 1.60,
-            FRAME_W: 1.60,
+            MIN_SH: 0.022,
+            GAMMA: 1.25,
+            RADIUS_MAX: 1.8,
+            RADIUS_THRESHOLD: 0.03,
+            RADIUS_EXP: 1.25,
+            SPREAD: 2.4,
+            MIN_CNT: 6,
+            EXTRA: 22,
+            FRAME_H: 1.60, // 👈 保持面部轮廓大小
+            FRAME_W: 1.60, // 👈 保持面部轮廓大小
             TRAIL: 0.22,
-            HAIR_THR: -0.42, HAIR_STR: 0.85,
-            NECK_THR: 0.45, NECK_STR: 0.40,
-            EDGE_THR: 0.65, EDGE_STR: 0.15
+            HAIR_THR: -0.38, HAIR_STR: 0.82,
+            NECK_THR: 0.40, NECK_STR: 0.38,
+            EDGE_THR: 0.40, EDGE_STR: 0.30
         };
 
         const STYLES = [
-            { name: 'INK', sub: 'DISSOLVED', hFn: s => 212 + s * 16, sFn: s => 4 + s * 22, lFn: s => 2 + Math.pow(s, 1.1) * 82, trail: 0.22 },
-            { name: 'DUST', sub: 'SCATTERED', hFn: s => 30 + s * 12, sFn: s => 6 + s * 26, lFn: s => 3 + Math.pow(s, 1.1) * 80, trail: 0.26 },
-            { name: 'AMBER', sub: 'BURNING', hFn: s => 28 + s * 18, sFn: s => 50 + s * 35, lFn: s => 3 + Math.pow(s, 1.0) * 78, trail: 0.18 },
-            { name: 'AURORA', sub: 'RADIANT', hFn: s => 160 + s * 85, sFn: s => 30 + s * 55, lFn: s => 2 + Math.pow(s, 1.1) * 78, trail: 0.20 },
-            { name: 'VELVET', sub: 'DENSE', hFn: s => 270 + s * 24, sFn: s => 15 + s * 40, lFn: s => 2 + Math.pow(s, 1.0) * 74, trail: 0.28 }
+            { name: 'INK', sub: 'DISSOLVED', trail: 0.22, hFn: s => 212 + s * 16, sFn: s => 5 + s * 18, lFn: s => 4 + s * 76 },
+            { name: 'DUST', sub: 'SCATTERED', trail: 0.26, hFn: s => 30 + s * 10, sFn: s => 8 + s * 22, lFn: s => 6 + s * 74 },
+            { name: 'AMBER', sub: 'BURNING', trail: 0.18, hFn: s => 28 + s * 14, sFn: s => 55 + s * 30, lFn: s => 6 + s * 70 },
+            { name: 'AURORA', sub: 'RADIANT', trail: 0.20, hFn: s => 160 + s * 80, sFn: s => 35 + s * 50, lFn: s => 5 + s * 72 },
+            { name: 'VELVET', sub: 'DENSE', trail: 0.28, hFn: s => 270 + s * 20, sFn: s => 18 + s * 35, lFn: s => 4 + s * 68 }
         ];
 
         const LIP_O = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61];
@@ -405,49 +404,35 @@
             dots = [];
             for (let i = 0; i < lms.length; i++) {
                 var lm = lms[i];
-                var rawSh = 0.5 - lm.z * 4.6;
-                var sh = Math.max(0, Math.min(1, rawSh));
+                var sh = Math.max(0, Math.min(1, 0.5 - lm.z * 4.5));
                 if (sh < CFG.MIN_SH) continue;
-
-                var isFeat = FEAT_LMS.indexOf(i) !== -1;
-                var isAxis = AXIS_LMS.indexOf(i) !== -1;
+                var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
                 var fx = 1 - lm.x;
                 var dx = fx * 2 - 1;
-
-                // 扩散策略
-                var curSpread = isFeat ? 0.35 : CFG.SPREAD_BASE;
-
-                // 下巴细节补充
-                if (i === 152 || i === 175) sh *= 1.2;
-
-                var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
-
-                // 👈 核心修改：彻底抑制中轴点数量，消除“中轴佛珠”现象
-                if (isAxis) count = Math.floor(count * 0.12);
-
+                var dy = lm.y * 2 - 1;
                 for (var j = 0; j < count; j++) {
-                    var ro = Math.sqrt(Math.random()) * curSpread;
+                    var ro = Math.sqrt(Math.random()) * CFG.SPREAD;
                     var ang = Math.random() * Math.PI * 2;
                     dots.push({
                         idx: i,
                         ox: Math.cos(ang) * ro,
                         oy: Math.sin(ang) * ro,
-                        sh: sh, dx: dx, dy: lm.y * 2 - 1,
-                        isFeat: isFeat,
-                        isPupil: PUPILS.includes(i) || PUPIL_B.includes(i)
+                        sh: sh, dx: dx, dy: dy
                     });
                 }
             }
         }
 
         function computeDotProps(d, si) {
-            let st = STYLES[si];
-            let edge = Math.max(0, Math.abs(d.dx) - CFG.EDGE_THR) * 1.5;
-            let shEff = Math.pow(d.sh, 1.1) * (1 - edge * 0.2);
-            let a = (d.isFeat ? 0.94 : 0.65) * (0.12 + shEff * 0.88);
-            if (d.isPupil) a = 1.0;
-            let sz = (d.isFeat ? 0.88 : 1.35) * CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
-            if (d.isPupil) sz *= 1.2;
+            var st = STYLES[si];
+            var hair = d.dy < CFG.HAIR_THR ? Math.min(1, (-d.dy - Math.abs(CFG.HAIR_THR)) * 2.8) : 0;
+            var neck = d.dy > CFG.NECK_THR ? Math.min(1, (d.dy - CFG.NECK_THR) * 2.5) : 0;
+            var edge = Math.max(0, Math.abs(d.dx) - CFG.EDGE_THR) * 2.2;
+            var shEff = d.sh * Math.max(0.06, 1 - hair * CFG.HAIR_STR - neck * CFG.NECK_STR - edge * CFG.EDGE_STR);
+            if (shEff < CFG.RADIUS_THRESHOLD) return null;
+
+            var sz = CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
+            var a = 0.18 + shEff * 0.68;
             return { h: st.hFn(shEff), s: st.sFn(shEff), l: st.lFn(shEff), sz, a };
         }
 
