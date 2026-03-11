@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FACIAL PRINT — 10 CONCEPTS</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#080808; color:#e8e8e8; font-family:'Courier New',Courier,monospace; font-size:11px; letter-spacing:.08em; line-height:1.7; }
+header { padding:36px 48px 28px; display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid rgba(255,255,255,.08); }
+.brand { font-size:14px; letter-spacing:.25em; color:#fff; }
+.version { color:rgba(255,255,255,.3); font-size:9px; letter-spacing:.15em; margin-top:4px; }
+.meta { text-align:right; color:rgba(255,255,255,.22); font-size:9px; letter-spacing:.1em; line-height:2; }
+.draft { padding:36px 48px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:40px; border-bottom:1px solid rgba(255,255,255,.06); }
+.ds h2 { font-size:9px; letter-spacing:.2em; color:rgba(255,255,255,.3); font-weight:normal; margin-bottom:12px; text-transform:uppercase; }
+.ds p { color:rgba(255,255,255,.55); font-size:10px; letter-spacing:.05em; line-height:2; }
+.concepts-bar { padding:24px 48px 16px; display:flex; justify-content:space-between; align-items:baseline; }
+.concepts-bar-title { font-size:9px; letter-spacing:.2em; color:rgba(255,255,255,.25); }
+.grid { display:grid; grid-template-columns:repeat(2,1fr); gap:2px; background:#020202; }
+.cell { position:relative; background:#080808; overflow:hidden; cursor:pointer; transition:opacity .2s; }
+.cell:hover { opacity:.92; }
+.cell canvas { display:block; width:100%; }
+.cell-label { position:absolute; bottom:0; left:0; right:0; padding:28px 20px 20px; background:linear-gradient(to top,rgba(8,8,8,.95) 0%,transparent 100%); }
+.cell-num { font-size:9px; color:rgba(255,255,255,.22); letter-spacing:.2em; margin-bottom:3px; }
+.cell-name { font-size:13px; letter-spacing:.2em; color:rgba(255,255,255,.85); text-transform:uppercase; }
+.cell-desc { font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.3); text-transform:uppercase; margin-top:3px; }
+footer { padding:28px 48px; color:rgba(255,255,255,.18); font-size:9px; letter-spacing:.12em; border-top:1px solid rgba(255,255,255,.06); display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand">FACIAL PRINT</div>
+    <div class="version">PROJECT DRAFT — 10 VISUAL DIRECTIONS</div>
+  </div>
+  <div class="meta">VERSION 0.0<br>2026.03.10<br>ANNA / QICHENG DAI</div>
+</header>
+
+<div class="draft">
+  <div class="ds">
+    <h2>CONCEPT</h2>
+    <p>FACIAL PRINT is a real-time biometric visualization system that translates facial geometry, expression, and movement into a living particle portrait. The face is presented not as image — but as data field.</p>
+  </div>
+  <div class="ds">
+    <h2>CORE MECHANICS</h2>
+    <p>
+      GEOMETRY → PARTICLES<br>
+      468 FaceMesh landmarks seed a particle cloud<br><br>
+      DEPTH → DENSITY<br>
+      Shadowed areas attract denser clusters<br><br>
+      EXPRESSION → COLOR<br>
+      Smile → warm. Tension → cool. Neutral → white<br><br>
+      MOTION → SOUND<br>
+      Head rotation modulates ambient audio field
+    </p>
+  </div>
+  <div class="ds">
+    <h2>OPEN QUESTIONS</h2>
+    <p>
+      Which visual register — documentary or expressive?<br><br>
+      Monochrome restraint or full color spectrum?<br><br>
+      Particle density: subtle presence or overwhelm?<br><br>
+      Sound: ambient drone or reactive synthesis?<br><br>
+      Background: void black or textured field?
+    </p>
+  </div>
+</div>
+
+<div class="concepts-bar">
+  <div class="concepts-bar-title">SELECT A VISUAL DIRECTION — 10 PROPOSALS</div>
+  <div style="color:rgba(255,255,255,.18);font-size:9px;letter-spacing:.1em;">HOVER TO INSPECT · SELECT ONE TO PROCEED TO V0.0.1</div>
+</div>
+
+<div class="grid">
+  <div class="cell"><canvas id="c1" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">01</div><div class="cell-name">DUST</div><div class="cell-desc">DEPTH-SHADOW MAPPING — MONOCHROME — LIKE THE REFERENCE</div></div></div>
+
+  <div class="cell"><canvas id="c2" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">02</div><div class="cell-name">EMBER</div><div class="cell-desc">EXPRESSION-REACTIVE — WARM FIRE ENERGY — GLOWING</div></div></div>
+
+  <div class="cell"><canvas id="c3" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">03</div><div class="cell-name">GHOST</div><div class="cell-desc">SPARSE ETHEREAL — ICE WHITE — MOTION BLUR TRAILS</div></div></div>
+
+  <div class="cell"><canvas id="c4" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">04</div><div class="cell-name">AURORA</div><div class="cell-desc">PASTEL IRIDESCENCE — TEAL TO VIOLET — SHIMMERING</div></div></div>
+
+  <div class="cell"><canvas id="c5" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">05</div><div class="cell-name">STATIC</div><div class="cell-desc">TV GRAIN NOISE — FACE REVEALED THROUGH TEXTURE</div></div></div>
+
+  <div class="cell"><canvas id="c6" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">06</div><div class="cell-name">MERCURY</div><div class="cell-desc">LIQUID METAL SILVER — REFLECTIVE HIGHLIGHT — COLD</div></div></div>
+
+  <div class="cell"><canvas id="c7" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">07</div><div class="cell-name">VELVET</div><div class="cell-desc">DENSE FIBER TEXTURE — DEEP BURGUNDY — TACTILE</div></div></div>
+
+  <div class="cell"><canvas id="c8" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">08</div><div class="cell-name">PRISM</div><div class="cell-desc">SPECTRAL DECOMPOSITION — RAINBOW — POSITIONAL HUE</div></div></div>
+
+  <div class="cell"><canvas id="c9" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">09</div><div class="cell-name">INK</div><div class="cell-desc">DIFFUSION ON LIGHT — DARK NAVY — WASH AESTHETIC</div></div></div>
+
+  <div class="cell"><canvas id="c10" width="420" height="560"></canvas>
+    <div class="cell-label"><div class="cell-num">10</div><div class="cell-name">VOID</div><div class="cell-desc">NEAR INVISIBLE — ELECTRIC BLUE ACCENT — DARK FIELD</div></div></div>
+</div>
+
+<footer>
+  <span>FACIAL PRINT — QICHENG DAI — 2026</span>
+  <span>SELECT A DIRECTION TO PROCEED TO V0.0.1</span>
+</footer>
+
+<script>
+// =====================================================================
+// SYNTHETIC FACE DEPTH SIMULATION
+// =====================================================================
+function computeDepth(dx, dy) {
+  var base = 0.45 * (1 - Math.sqrt(dx*dx*0.85 + dy*dy*0.55));
+  var nose = 0.38 * Math.exp(-(dx*dx*28 + (dy+0.08)*(dy+0.08)*18));
+  var lcheek = 0.18 * Math.exp(-((dx+0.38)*(dx+0.38)*9 + (dy+0.02)*(dy+0.02)*11));
+  var rcheek = 0.18 * Math.exp(-((dx-0.38)*(dx-0.38)*9 + (dy+0.02)*(dy+0.02)*11));
+  var fh = 0.12 * Math.exp(-(dx*dx*3.5 + (dy+0.52)*(dy+0.52)*5));
+  var le = -0.18 * Math.exp(-((dx+0.28)*(dx+0.28)*28 + (dy+0.20)*(dy+0.20)*38));
+  var re = -0.18 * Math.exp(-((dx-0.28)*(dx-0.28)*28 + (dy+0.20)*(dy+0.20)*38));
+  var lt = -0.12 * Math.exp(-((dx+0.72)*(dx+0.72)*5 + dy*dy*2.5));
+  var rt = -0.12 * Math.exp(-((dx-0.72)*(dx-0.72)*5 + dy*dy*2.5));
+  return Math.max(0.05, Math.min(1, base + nose + lcheek + rcheek + fh + le + re + lt + rt));
+}
+
+function computeFeature(dx, dy) {
+  var eyes = Math.exp(-((Math.abs(dx)-0.27)*(Math.abs(dx)-0.27)*22 + (dy+0.20)*(dy+0.20)*32));
+  var nose = Math.exp(-(dx*dx*22 + (dy-0.02)*(dy-0.02)*16));
+  var mouth = Math.exp(-(dx*dx*14 + (dy-0.30)*(dy-0.30)*22));
+  var brows = Math.exp(-((Math.abs(dx)-0.24)*(Math.abs(dx)-0.24)*20 + (dy+0.38)*(dy+0.38)*28));
+  return Math.min(1, eyes*0.75 + nose*0.45 + mouth*0.55 + brows*0.35);
+}
+
+function getRegion(dx, dy) {
+  if (Math.exp(-((Math.abs(dx)-0.27)*(Math.abs(dx)-0.27)*22 + (dy+0.20)*(dy+0.20)*32)) > 0.45) return 'eye';
+  if (Math.exp(-(dx*dx*22 + (dy+0.04)*(dy+0.04)*22)) > 0.38) return 'nose';
+  if (Math.exp(-(dx*dx*14 + (dy-0.30)*(dy-0.30)*22)) > 0.38) return 'mouth';
+  if (Math.exp(-((Math.abs(dx)-0.24)*(Math.abs(dx)-0.24)*20 + (dy+0.38)*(dy+0.38)*28)) > 0.45) return 'brow';
+  return 'skin';
+}
+
+function rng(seed) {
+  var s = seed;
+  return function() { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+}
+
+function generateFace(W, H, count, seed) {
+  var r = rng(seed || 42);
+  var cx = W * 0.5, cy = H * 0.43;
+  var fw = W * 0.36, fh = H * 0.44;
+  var pts = [], tries = 0;
+  while (pts.length < count && tries < count * 10) {
+    tries++;
+    var angle = r() * Math.PI * 2;
+    var rad = Math.sqrt(r());
+    var px = cx + rad * Math.cos(angle) * fw * (0.88 + 0.12 * Math.cos(angle * 2));
+    var py = cy + rad * Math.sin(angle) * fh - fh * 0.03;
+    var dx = (px - cx) / fw, dy = (py - cy) / fh;
+    var maxHW = dy < -0.45 ? (0.88 - Math.pow(Math.abs(dy + 0.45) * 0.9, 1.6) * 0.5) :
+                 dy > 0.42 ? (0.88 - Math.pow((dy - 0.42) * 1.4, 1.8) * 0.6) : 0.94;
+    if (Math.abs(dx) / maxHW > 1 || dy < -0.88 || dy > 0.88) continue;
+    var depth = computeDepth(dx, dy);
+    var shadow = 1 - depth;
+    var feature = computeFeature(dx, dy);
+    var accept = 0.2 + shadow * 0.45 + feature * 0.35;
+    if (r() > accept) continue;
+    pts.push({
+      x: px, y: py, dx: dx, dy: dy,
+      depth: depth, shadow: shadow, feature: feature,
+      type: getRegion(dx, dy),
+      n: r(), phase: r() * Math.PI * 2,
+      size: 0.7 + shadow * 1.4 + r() * 0.9
+    });
+  }
+  return pts;
+}
+
+// =====================================================================
+// CONCEPT RENDERERS
+// =====================================================================
+
+// 01 DUST — depth-shadow monochrome (matches reference photo)
+function renderDust(ctx, pts, t, W, H) {
+  ctx.fillStyle = '#0c0b0b';
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var br = 28 + p.depth * 68;
+    var a = 0.45 + p.shadow * 0.45 + Math.sin(t * 0.4 + p.phase) * 0.03;
+    var sz = 0.75 + p.shadow * 1.3;
+    ctx.globalAlpha = Math.min(0.95, a);
+    ctx.fillStyle = 'hsl(30,' + (5 + p.shadow * 8) + '%,' + br + '%)';
+    ctx.beginPath();
+    ctx.arc(p.x + (p.n - 0.5) * 0.4, p.y, sz, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// 02 EMBER — warm fire expression-reactive
+function renderEmber(ctx, pts, t, W, H) {
+  ctx.fillStyle = 'rgba(4,1,1,0.18)';
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var flicker = Math.sin(t * 3.2 + p.phase) * 0.12 + Math.cos(t * 5.7 + p.phase * 2.3) * 0.08;
+    var hue = 10 + p.depth * 28 + flicker * 18;
+    var sat = 90 - p.shadow * 15 + flicker * 10;
+    var lum = 35 + p.depth * 38 + flicker * 14;
+    var sz = 0.9 + p.shadow * 2.2 + Math.abs(flicker) * 1.5;
+    var drift = Math.sin(t * 1.1 + p.phase) * 1.5;
+    ctx.globalAlpha = Math.min(0.92, 0.35 + p.feature * 0.4 + p.depth * 0.25 + flicker);
+    ctx.shadowBlur = p.feature * 14 + 2;
+    ctx.shadowColor = 'hsl(' + hue + ',100%,65%)';
+    ctx.fillStyle = 'hsl(' + hue + ',' + sat + '%,' + lum + '%)';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y + drift, sz, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+}
+
+// 03 GHOST — sparse ice white with trails
+function renderGhost(ctx, pts, t, W, H) {
+  ctx.fillStyle = 'rgba(4,4,6,0.22)';
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var pulse = Math.sin(t * 0.9 + p.phase) * 0.18;
+    var sz = 0.5 + p.feature * 2.2 + pulse * 1.5;
+    var a = 0.15 + p.feature * 0.55 + p.depth * 0.2 + pulse * 0.1;
+    var trail = Math.sin(t * 1.4 + p.phase) * 2;
+    ctx.globalAlpha = Math.min(0.85, a);
+    ctx.shadowBlur = p.feature * 20 + sz * 3;
+    ctx.shadowColor = 'rgba(200,230,255,0.6)';
+    ctx.fillStyle = 'rgba(210,230,255,' + (0.6 + p.depth * 0.4) + ')';
+    ctx.beginPath();
+    ctx.arc(p.x + trail * 0.4, p.y + trail * 0.2, sz, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+}
+
+// 04 AURORA — teal to violet pastel
+function renderAurora(ctx, pts, t, W, H) {
+  ctx.fillStyle = 'rgba(4,5,8,0.16)';
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var wave = Math.sin(t * 0.8 + p.phase + p.dx * 2) * 0.2;
+    var hue = 165 + p.dy * 70 + wave * 30 + p.dx * 40;
+    var sat = 60 + p.feature * 30 + wave * 20;
+    var lum = 55 + p.depth * 25 + wave * 15;
+    var sz = 0.8 + p.shadow * 1.5 + Math.abs(wave) * 1.2;
+    ctx.globalAlpha = Math.min(0.88, 0.3 + p.depth * 0.35 + p.feature * 0.25 + wave * 0.1);
+    ctx.shadowBlur = sz * 4 + 2;
+    ctx.shadowColor = 'hsl(' + hue + ',' + sat + '%,' + lum + '%)';
+    ctx.fillStyle = 'hsl(' + hue + ',' + sat + '%,' + lum + '%)';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y + Math.sin(t * 0.6 + p.phase) * 1.8, sz, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+}
+
+// 05 STATIC — TV grain face revelation
+function renderStatic(ctx, pts, t, W, H) {
+  ctx.fillStyle = 'rgba(6,6,6,0.82)';
+  ctx.fillRect(0, 0, W, H);
+  // grain field
+  for (var i = 0; i < 800; i++) {
+    var gx = (pts[i % pts.length].x + (Math.sin(t * 7.1 + i) * 3)) % W;
+    var gy = (pts[i % pts.length].y + (Math.cos(t * 9.3 + i * 1.3) * 2)) % H;
+    var ga = 0.04 + Math.random() * 0.06;
+    ctx.globalAlpha = ga;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(gx, gy, 1, 1);
+  }
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var noise = Math.sin(t * 8.5 + p.phase * 7.3) * 0.5 + 0.5;
+    var br = 55 + p.depth * 42 + noise * 8;
+    var sz = 0.6 + p.depth * 1.0 + noise * 0.8;
+    var a = 0.35 + p.shadow * 0.5 + p.feature * 0.15;
+    ctx.globalAlpha = Math.min(0.95, a);
+    ctx.fillStyle = 'hsl(0,0%,' + br + '%)';
+    ctx.fillRect(p.x + (noise - 0.5) * 1.5, p.y, sz, sz);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// 06 MERCURY — liquid metal silver
+function renderMercury(ctx, pts, t, W, H) {
+  ctx.fillStyle = 'rgba(6,7,8,0.2)';
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var shine = Math.max(0, p.dx * (-0.6) + p.depth * 0.8);
+    var ripple = Math.sin(t * 1.2 + p.phase) * 0.1;
+    var lum = 30 + p.depth * 50 + shine * 35 + ripple * 10;
+    var sz = 0.7 + p.depth * 1.5 + ripple * 0.8;
+    var sat = 8 + p.depth * 6;
+    ctx.globalAlpha = Math.min(0.92, 0.4 + p.depth * 0.45 + ripple * 0.08);
+    if (shine > 0.55) {
+      ctx.shadowBlur = shine * 12;
+      ctx.shadowColor = 'rgba(220,235,245,0.9)';
+    } else {
+      ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = 'hsl(210,' + sat + '%,' + lum + '%)';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, sz, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+}
+
+// 07 VELVET — deep burgundy-purple dense texture
+function renderVelvet(ctx, pts, t, W, H) {
+  ctx.fillStyle = 'rgba(5,3,5,0.14)';
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var fiber = Math.sin(t * 0.7 + p.phase) * 0.08;
+    var hue = 300 + p.shadow * 25 + p.dx * 18;
+    var sat = 55 + p.depth * 22 + fiber * 15;
+    var lum = 18 + p.depth * 28 + p.feature * 12 + fiber * 8;
+    var sz = 0.5 + p.shadow * 1.1;
+    var rot = p.dx * 0.6;
+    ctx.globalAlpha = Math.min(0.95, 0.5 + p.shadow * 0.38 + p.feature * 0.12);
+    ctx.fillStyle = 'hsl(' + hue + ',' + sat + '%,' + lum + '%)';
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(rot);
+    ctx.fillRect(-sz * 0.4, -sz, sz * 0.8, sz * 2.2);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// 08 PRISM — spectral rainbow by position
+function renderPrism(ctx, pts, t, W, H) {
+  ctx.fillStyle = 'rgba(4,4,5,0.18)';
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var wave = Math.sin(t * 1.0 + p.phase + p.dy * 3) * 0.12;
+    var hue = ((p.dy + 0.9) / 1.8) * 280 + wave * 25;
+    var sat = 75 + p.feature * 20 + wave * 10;
+    var lum = 45 + p.depth * 30 + wave * 12;
+    var sz = 0.8 + p.shadow * 1.3 + Math.abs(wave) * 1.2;
+    ctx.globalAlpha = Math.min(0.9, 0.3 + p.depth * 0.4 + p.feature * 0.2 + wave * 0.08);
+    ctx.shadowBlur = p.feature * 8 + 1;
+    ctx.shadowColor = 'hsl(' + hue + ',100%,65%)';
+    ctx.fillStyle = 'hsl(' + hue + ',' + sat + '%,' + lum + '%)';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, sz, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+}
+
+// 09 INK — diffusion, light background, dark navy particles
+function renderInk(ctx, pts, t, W, H) {
+  ctx.fillStyle = 'rgba(245,244,240,0.22)';
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var diffuse = Math.sin(t * 0.5 + p.phase) * 0.08;
+    var hue = 220 + p.dy * 20 + p.shadow * 15;
+    var sat = 50 + p.shadow * 25 + diffuse * 10;
+    var lum = 10 + p.depth * 20 + (1 - p.shadow) * 15;
+    var sz = 0.7 + p.shadow * 1.8 + Math.abs(diffuse) * 2.5;
+    ctx.globalAlpha = Math.min(0.9, 0.4 + p.shadow * 0.45 + diffuse * 0.05);
+    ctx.fillStyle = 'hsl(' + hue + ',' + sat + '%,' + lum + '%)';
+    ctx.beginPath();
+    ctx.arc(p.x + diffuse * 3, p.y + diffuse * 2, sz, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// 10 VOID — near invisible, electric blue accent
+function renderVoid(ctx, pts, t, W, H) {
+  ctx.fillStyle = 'rgba(3,3,5,0.25)';
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var pulse = Math.sin(t * 0.6 + p.phase) * 0.15;
+    var isFeature = p.feature > 0.38;
+    var hue = isFeature ? (195 + p.dx * 20) : 230;
+    var sat = isFeature ? (80 + pulse * 20) : 15;
+    var lum = isFeature ? (50 + p.depth * 25 + pulse * 15) : (10 + p.depth * 12);
+    var sz = isFeature ? (1.0 + p.feature * 2.5 + pulse * 1.5) : (0.5 + p.depth * 0.7);
+    var a = isFeature ? Math.min(0.9, 0.45 + p.feature * 0.35 + pulse * 0.15) :
+                        Math.min(0.4, 0.08 + p.depth * 0.2);
+    ctx.globalAlpha = a;
+    if (isFeature) {
+      ctx.shadowBlur = p.feature * 18 + pulse * 10;
+      ctx.shadowColor = 'hsl(' + hue + ',100%,70%)';
+    } else {
+      ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = 'hsl(' + hue + ',' + sat + '%,' + lum + '%)';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, sz, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+}
+
+// =====================================================================
+// CANVAS SETUP & ANIMATION
+// =====================================================================
+var concepts = [
+  { id:'c1', render: renderDust,    count: 3200, bg: '#0c0b0b' },
+  { id:'c2', render: renderEmber,   count: 2200, bg: '#040101' },
+  { id:'c3', render: renderGhost,   count: 1400, bg: '#040408' },
+  { id:'c4', render: renderAurora,  count: 2600, bg: '#040508' },
+  { id:'c5', render: renderStatic,  count: 3400, bg: '#060606' },
+  { id:'c6', render: renderMercury, count: 2400, bg: '#060708' },
+  { id:'c7', render: renderVelvet,  count: 3000, bg: '#050305' },
+  { id:'c8', render: renderPrism,   count: 2500, bg: '#040405' },
+  { id:'c9', render: renderInk,     count: 2800, bg: '#f5f4f0' },
+  { id:'c10',render: renderVoid,    count: 1600, bg: '#030305' }
+];
+
+concepts.forEach(function(cfg, idx) {
+  var canvas = document.getElementById(cfg.id);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  // Fill background immediately
+  ctx.fillStyle = cfg.bg;
+  ctx.fillRect(0, 0, W, H);
+  // Generate particles with slight delay to avoid blocking
+  setTimeout(function() {
+    var pts = generateFace(W, H, cfg.count, idx * 1337 + 42);
+    var start = performance.now();
+    function frame(now) {
+      var t = (now - start) * 0.001;
+      cfg.render(ctx, pts, t, W, H);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }, idx * 80);
+});
+</script>
+</body>
+</html>

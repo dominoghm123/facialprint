@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FACIAL PRINT v3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Courier New',Courier,monospace}
+canvas#c{position:fixed;top:0;left:0;width:100vw;height:100vh}
+video#v{position:absolute;top:-9999px;left:-9999px;width:1px;height:1px}
+
+/* ── TOP BAR ── */
+#ui-top{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:22px 28px;pointer-events:none;z-index:10}
+.dot-matrix{display:grid;grid-template-columns:repeat(9,5px);gap:3px;margin-bottom:5px}
+.dm{width:5px;height:5px;background:rgba(255,255,255,.16);border-radius:.5px}
+#sound-btn{pointer-events:all;cursor:pointer;background:none;border:none;color:rgba(255,255,255,.48);font-family:'Courier New',monospace;font-size:10px;letter-spacing:.18em;padding:0;transition:color .2s}
+#sound-btn:hover{color:#fff}
+#sound-btn.on{color:rgba(255,255,255,.85)}
+.ui-desc{text-align:right;color:rgba(255,255,255,.26);font-size:10px;letter-spacing:.1em;line-height:1.8;max-width:260px}
+
+/* ── STYLE NAME FLASH ── */
+#style-flash{position:fixed;top:22px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.4em;color:rgba(255,255,255,0);z-index:10;pointer-events:none;white-space:nowrap;transition:color .45s}
+#style-flash.show{color:rgba(255,255,255,.4)}
+
+/* ── LEFT SLIDER ── */
+#slider-wrap{position:fixed;left:28px;top:50%;transform:translateY(-50%);z-index:10;pointer-events:all;user-select:none}
+#slider-track-line{position:absolute;left:7px;top:0;width:1px;background:rgba(255,255,255,.06);pointer-events:none}
+.si{display:flex;align-items:center;gap:12px;cursor:pointer;padding:10px 0;position:relative}
+.si-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.1);transition:all .3s;flex-shrink:0;position:relative;z-index:2}
+.si.active .si-dot{background:#fff;border-color:#fff;box-shadow:0 0 10px rgba(255,255,255,.35)}
+.si-text{display:flex;flex-direction:column;gap:1px}
+.si-name{font-size:9px;letter-spacing:.2em;color:rgba(255,255,255,.18);transition:all .28s;text-transform:uppercase}
+.si.active .si-name{color:rgba(255,255,255,.8);font-size:10px;letter-spacing:.25em}
+.si-sub{font-size:8px;letter-spacing:.1em;color:rgba(255,255,255,0);transition:color .3s;text-transform:uppercase}
+.si.active .si-sub{color:rgba(255,255,255,.26)}
+
+/* ── SPRING INDICATOR ── */
+#indicator{position:fixed;left:25px;width:11px;height:11px;border:1px solid rgba(255,255,255,.65);border-radius:50%;background:transparent;z-index:11;pointer-events:none;transform:translateY(-50%);box-shadow:0 0 12px rgba(255,255,255,.22)}
+
+/* ── BOTTOM LEFT ── */
+#status-bl{position:fixed;bottom:26px;left:28px;z-index:10;line-height:2.4}
+#st-face{font-size:9px;letter-spacing:.15em;color:rgba(255,255,255,.3)}
+#st-expr{font-size:9px;letter-spacing:.1em;color:rgba(255,255,255,.18)}
+
+/* ── BOTTOM RIGHT BARS ── */
+#bars-br{position:fixed;bottom:26px;right:28px;z-index:10;display:flex;flex-direction:column;gap:13px;align-items:flex-end}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bl{font-size:8px;letter-spacing:.09em;color:rgba(255,255,255,.15);width:38px;text-align:right}
+.br{font-size:8px;letter-spacing:.09em;color:rgba(255,255,255,.15);width:38px}
+.bt{width:110px;height:1px;background:rgba(255,255,255,.07);position:relative}
+.bd{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.45);position:absolute;top:-2px;transform:translateX(-50%);transition:left .14s,background .35s}
+
+/* ── CAMERA OVERLAY ── */
+#overlay{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;z-index:20;color:rgba(255,255,255,.38);font-size:10px;letter-spacing:.12em;line-height:2.8;text-align:center}
+#overlay.hidden{display:none}
+#overlay h2{font-size:11px;letter-spacing:.28em;color:rgba(255,255,255,.7);font-weight:normal;margin-bottom:20px}
+code{color:rgba(110,195,255,.58);background:rgba(255,255,255,.03);padding:5px 14px;font-size:10px}
+#start-btn{margin-top:28px;padding:9px 26px;background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.4);font-family:'Courier New',monospace;font-size:9px;letter-spacing:.2em;cursor:pointer;transition:all .25s;pointer-events:all}
+#start-btn:hover{border-color:rgba(255,255,255,.5);color:#fff}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<video id="v" autoplay muted playsinline></video>
+
+<div id="ui-top">
+  <div>
+    <div class="dot-matrix" id="dm"></div>
+    <button id="sound-btn">SOUND [OFF]</button>
+  </div>
+  <div class="ui-desc">FACIAL PRINT IS A REAL-TIME<br>EXPRESSION-REACTIVE PARTICLE<br>RENDERING SYSTEM.</div>
+</div>
+
+<div id="style-flash"></div>
+
+<div id="slider-wrap"><div id="slider-track-line"></div></div>
+<div id="indicator"></div>
+
+<div id="status-bl">
+  <div id="st-face">○ AWAITING FACE</div>
+  <div id="st-expr">— NEUTRAL</div>
+</div>
+
+<div id="bars-br">
+  <div class="bar-row"><span class="bl">COOL</span><div class="bt"><div class="bd" id="bd-warm"></div></div><span class="br">WARM</span></div>
+  <div class="bar-row"><span class="bl">STILL</span><div class="bt"><div class="bd" id="bd-move"></div></div><span class="br">ACTIVE</span></div>
+  <div class="bar-row"><span class="bl">CLOSED</span><div class="bt"><div class="bd" id="bd-open"></div></div><span class="br">OPEN</span></div>
+</div>
+
+<div id="overlay">
+  <h2>FACIAL PRINT v3</h2>
+  <div>CAMERA REQUIRES HTTP SERVER</div>
+  <br><code>python3 -m http.server 8080</code>
+  <div style="font-size:9px;color:rgba(255,255,255,.2);margin-top:4px">localhost:8080/facial-print-v3.html</div>
+  <button id="start-btn" onclick="tryStart()">TRY ANYWAY →</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1632432234/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js" crossorigin="anonymous"></script>
+<script>
+
+// ─────────────────────────────────────────────
+//  STYLE DEFINITIONS
+// ─────────────────────────────────────────────
+var STYLES = [
+  { name:'INK',    sub:'DISSOLVED', trail:0.20, aFreq:[100, 450],  aQ:12, aBase:44 },
+  { name:'DUST',   sub:'SCATTERED', trail:0.30, aFreq:[200, 650],  aQ:15, aBase:55 },
+  { name:'AMBER',  sub:'BURNING',   trail:0.10, aFreq:[180, 900],  aQ:20, aBase:58 },
+  { name:'AURORA', sub:'RADIANT',   trail:0.13, aFreq:[380,1400],  aQ:22, aBase:65 },
+  { name:'VELVET', sub:'DENSE',     trail:0.26, aFreq:[ 75, 280],  aQ:10, aBase:41 }
+];
+
+// ─────────────────────────────────────────────
+//  GLOBAL STATE
+// ─────────────────────────────────────────────
+var canvas = document.getElementById('c');
+var ctx    = canvas.getContext('2d');
+var video  = document.getElementById('v');
+var W=0, H=0, FR={};   // FR = face rect
+
+var particles    = [];
+var faceDetected = false, prevFaceDet = false;
+var exprSmile=0, exprTension=0, mouthOpen=0;
+var smoothYaw=0, smoothPitch=0, motionMag=0;
+var tgtH=45, tgtS=10, tgtL=80;
+
+var curStyle=0, prevStyle=0, styleBlend=1.0;
+
+// Slider spring
+var indY=0, indTargY=0, indVY=0;
+
+// Audio
+var AN=null, soundOn=false;
+
+// Misc
+var flashTmr=null, frame=0;
+
+// ─────────────────────────────────────────────
+//  CANVAS + FACE RECT
+// ─────────────────────────────────────────────
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  var fh = H * 0.82;
+  var fw = fh * 0.72;
+  FR = { x:(W-fw)*0.5, y:(H-fh)*0.5 + H*0.01, w:fw, h:fh };
+  requestAnimationFrame(updateIndicatorTarget);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ─────────────────────────────────────────────
+//  SLIDER UI
+// ─────────────────────────────────────────────
+(function buildSlider(){
+  var wrap = document.getElementById('slider-wrap');
+  STYLES.forEach(function(s,i){
+    var el = document.createElement('div');
+    el.className = 'si' + (i===0?' active':'');
+    el.dataset.idx = i;
+    el.innerHTML =
+      '<div class="si-dot"></div>' +
+      '<div class="si-text">' +
+        '<div class="si-name">'+s.name+'</div>' +
+        '<div class="si-sub">'+s.sub+'</div>' +
+      '</div>';
+    el.addEventListener('click', function(){ setStyle(+this.dataset.idx); });
+    wrap.appendChild(el);
+  });
+  requestAnimationFrame(function(){
+    var items = wrap.querySelectorAll('.si');
+    if(items.length > 1){
+      var wrRect = wrap.getBoundingClientRect();
+      var r0 = items[0].getBoundingClientRect();
+      var rL = items[items.length-1].getBoundingClientRect();
+      var tl = document.getElementById('slider-track-line');
+      tl.style.top    = (r0.top  + r0.height/2 - wrRect.top)  + 'px';
+      tl.style.height = (rL.top  + rL.height/2 - r0.top - r0.height/2) + 'px';
+    }
+    updateIndicatorTarget();
+  });
+})();
+
+function updateIndicatorTarget(){
+  var items = document.querySelectorAll('.si');
+  if(!items[curStyle]) return;
+  var r = items[curStyle].getBoundingClientRect();
+  indTargY = r.top + r.height * 0.5;
+  if(indY===0) indY = indTargY;
+}
+
+function setStyle(n){
+  if(n<0||n>=STYLES.length||n===curStyle) return;
+  prevStyle  = curStyle;
+  curStyle   = n;
+  styleBlend = 0;
+  document.querySelectorAll('.si').forEach(function(el,i){
+    el.classList.toggle('active', i===curStyle);
+  });
+  updateIndicatorTarget();
+  // Flash name
+  var f = document.getElementById('style-flash');
+  f.textContent = STYLES[curStyle].name + ' — ' + STYLES[curStyle].sub;
+  f.classList.add('show');
+  clearTimeout(flashTmr);
+  flashTmr = setTimeout(function(){ f.classList.remove('show'); }, 1700);
+  // Audio shift
+  if(AN && soundOn) updateAudioForStyle();
+}
+
+// Scroll snapping
+var scrollAcc = 0;
+window.addEventListener('wheel', function(e){
+  e.preventDefault();
+  scrollAcc += e.deltaY;
+  if(Math.abs(scrollAcc) >= 100){
+    setStyle(Math.max(0, Math.min(STYLES.length-1, curStyle + (scrollAcc>0?1:-1))));
+    scrollAcc = 0;
+  }
+}, {passive:false});
+
+// ─────────────────────────────────────────────
+//  FACE COORDINATE HELPERS
+// ─────────────────────────────────────────────
+function lmToScreen(lm){
+  return {
+    x: true ? FR.x + (1-lm.x)*FR.w : FR.x + lm.x*FR.w,
+    y: FR.y + lm.y*FR.h
+  };
+}
+function lmShadow(lm){ return Math.max(0, Math.min(1, 0.5 - lm.z*4.2)); }
+
+// ─────────────────────────────────────────────
+//  DEPTH & FEATURE (anatomical simulation)
+// ─────────────────────────────────────────────
+function computeDepth(dx, dy){
+  var b  = 0.45*(1-Math.sqrt(dx*dx*0.85+dy*dy*0.55));
+  var ns = 0.38*Math.exp(-(dx*dx*28+(dy+0.08)*(dy+0.08)*18));
+  var lc = 0.18*Math.exp(-((dx+0.38)*(dx+0.38)*9+(dy+0.02)*(dy+0.02)*11));
+  var rc = 0.18*Math.exp(-((dx-0.38)*(dx-0.38)*9+(dy+0.02)*(dy+0.02)*11));
+  var fh = 0.12*Math.exp(-(dx*dx*3.5+(dy+0.52)*(dy+0.52)*5));
+  var le = -0.18*Math.exp(-((dx+0.28)*(dx+0.28)*28+(dy+0.20)*(dy+0.20)*38));
+  var re = -0.18*Math.exp(-((dx-0.28)*(dx-0.28)*28+(dy+0.20)*(dy+0.20)*38));
+  return Math.max(0.05, Math.min(1, b+ns+lc+rc+fh+le+re));
+}
+function computeFeature(dx, dy){
+  var ey = Math.exp(-((Math.abs(dx)-0.27)*(Math.abs(dx)-0.27)*22+(dy+0.20)*(dy+0.20)*32));
+  var ns = Math.exp(-(dx*dx*22+(dy-0.02)*(dy-0.02)*16));
+  var mo = Math.exp(-(dx*dx*14+(dy-0.30)*(dy-0.30)*22));
+  var br = Math.exp(-((Math.abs(dx)-0.24)*(Math.abs(dx)-0.24)*20+(dy+0.38)*(dy+0.38)*28));
+  return Math.min(1, ey*0.75+ns*0.45+mo*0.55+br*0.35);
+}
+
+// ─────────────────────────────────────────────
+//  PARTICLE CLASS
+// ─────────────────────────────────────────────
+function Particle(x, y, shadow, dx, dy){
+  this.x=x; this.y=y; this.tx=x; this.ty=y;
+  this.vx=0; this.vy=0;
+  this.shadow=shadow; this.dx=dx; this.dy=dy;
+  this.depth   = computeDepth(dx, dy);
+  this.feature = computeFeature(dx, dy);
+  this.phase   = Math.random()*Math.PI*2;
+  this.n       = Math.random();
+  this.scatterX = x; this.scatterY = y;
+}
+Particle.prototype.update = function(){
+  var ddx=this.tx-this.x, ddy=this.ty-this.y;
+  this.vx=(this.vx+ddx*0.05)*0.77;
+  this.vy=(this.vy+ddy*0.05)*0.77;
+  this.x+=this.vx; this.y+=this.vy;
+};
+
+// ─────────────────────────────────────────────
+//  STYLE RENDER FUNCTIONS
+// ─────────────────────────────────────────────
+function sInk(p, t){
+  var d = Math.sin(t*0.5+p.phase)*0.07;
+  return { h:215+p.shadow*22, s:18+p.shadow*20, l:38+p.depth*40,
+           sz:0.65+p.shadow*1.7+Math.abs(d), a:0.38+p.shadow*0.43,
+           blur:0, ox:d*2, oy:d, fiber:false };
+}
+function sDust(p, t){
+  var j = Math.sin(t*0.35+p.phase)*0.04;
+  return { h:28, s:5+p.shadow*9, l:22+p.depth*62+j*10,
+           sz:0.72+p.shadow*1.3, a:0.42+p.shadow*0.46,
+           blur:0, ox:0, oy:0, fiber:false };
+}
+function sAmber(p, t){
+  var f = Math.sin(t*3.1+p.phase)*0.12 + Math.cos(t*5.6+p.phase*2.1)*0.07;
+  return { h:12+p.depth*26+f*16, s:88-p.shadow*12, l:30+p.depth*42+f*14,
+           sz:0.85+p.shadow*2.1+Math.abs(f)*1.4,
+           a:0.32+p.feature*0.38+p.depth*0.22+Math.abs(f)*0.08,
+           blur:p.feature*15+2, glow:true, ox:0, oy:f*1.5, fiber:false };
+}
+function sAurora(p, t){
+  var w = Math.sin(t*0.8+p.phase+p.dx*1.8)*0.18;
+  return { h:162+p.dy*65+w*28+p.dx*38, s:62+p.feature*28+w*18, l:52+p.depth*26+w*14,
+           sz:0.78+p.shadow*1.4+Math.abs(w),
+           a:0.28+p.depth*0.38+p.feature*0.22+w*0.06,
+           blur:3, glow:true, ox:w*2, oy:Math.sin(t*0.55+p.phase)*1.5, fiber:false };
+}
+function sVelvet(p, t){
+  var f = Math.sin(t*0.7+p.phase)*0.07;
+  return { h:295+p.shadow*28+p.dx*16, s:52+p.depth*24+f*12, l:20+p.depth*30+p.feature*14+f*8,
+           sz:0.5+p.shadow*1.05, a:0.5+p.shadow*0.36+p.feature*0.12,
+           blur:0, fiber:true, rot:p.dx*0.7+Math.sin(p.phase)*0.25, ox:0, oy:0 };
+}
+var SFNS = [sInk, sDust, sAmber, sAurora, sVelvet];
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+function getProps(p, t){
+  var A = SFNS[curStyle](p, t);
+  if(styleBlend >= 0.97) return A;
+  var B = SFNS[prevStyle](p, t);
+  var bl = styleBlend;
+  return {
+    h:lerp(B.h,A.h,bl), s:lerp(B.s,A.s,bl), l:lerp(B.l,A.l,bl),
+    sz:lerp(B.sz,A.sz,bl), a:lerp(B.a,A.a,bl),
+    blur:lerp(B.blur||0,A.blur||0,bl),
+    glow:(A.glow||B.glow), fiber:(A.fiber&&bl>0.5),
+    rot:(A.rot||0), ox:lerp(B.ox||0,A.ox||0,bl), oy:lerp(B.oy||0,A.oy||0,bl)
+  };
+}
+
+// ─────────────────────────────────────────────
+//  PARTICLE BUILD / UPDATE
+// ─────────────────────────────────────────────
+var SAT_BASE=5, SAT_SH=9, SP_BASE=5, SP_SH=11;
+
+function buildParticles(lms){
+  var pts=[];
+  for(var i=0;i<lms.length;i++){
+    var lm=lms[i], sc=lmToScreen(lm), sh=lmShadow(lm);
+    var cnt=SAT_BASE+Math.round(sh*SAT_SH);
+    var sp=SP_BASE+sh*SP_SH;
+    var ndx=lm.x-0.5, ndy=lm.y-0.5;
+    for(var j=0;j<cnt;j++){
+      var u=Math.random(), v=Math.random();
+      var r=Math.sqrt(-2*Math.log(Math.max(1e-5,u)))*sp;
+      var a=v*6.283;
+      var px=sc.x+Math.cos(a)*r, py=sc.y+Math.sin(a)*r;
+      var p=new Particle(px,py,sh,ndx,ndy);
+      p.scatterX = FR.x+(Math.random()-0.5)*FR.w*1.8 + FR.w*0.5;
+      p.scatterY = FR.y+(Math.random()-0.5)*FR.h*1.6 + FR.h*0.5;
+      pts.push(p);
+    }
+  }
+  return pts;
+}
+
+function updateTargets(lms){
+  var idx=0;
+  for(var i=0;i<lms.length;i++){
+    var lm=lms[i], sc=lmToScreen(lm), sh=lmShadow(lm);
+    var cnt=SAT_BASE+Math.round(sh*SAT_SH);
+    var sp=(SP_BASE+sh*SP_SH)*0.32;
+    var ndx=lm.x-0.5, ndy=lm.y-0.5;
+    for(var j=0;j<cnt&&idx<particles.length;j++,idx++){
+      var u=Math.random(),v=Math.random();
+      var r=Math.sqrt(-2*Math.log(Math.max(1e-5,u)))*sp;
+      var a=v*6.283;
+      particles[idx].tx=sc.x+Math.cos(a)*r;
+      particles[idx].ty=sc.y+Math.sin(a)*r;
+      particles[idx].shadow=sh;
+      particles[idx].dx=ndx; particles[idx].dy=ndy;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+//  EXPRESSION + POSE DETECTION
+// ─────────────────────────────────────────────
+function d2(a,b){ var dx=a.x-b.x,dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
+
+function detectExpression(lms){
+  var mw  = d2(lms[61],lms[291]);
+  var fh  = d2(lms[10],lms[152]);
+  var mo  = d2(lms[13],lms[14]);
+  var rs  = (mw/(fh+1e-5)-0.27)*12;
+  var rt  = ((lms[70].y-lms[27].y)+(lms[300].y-lms[257].y))*0.5*290;
+  var ro  = (mo/(fh+1e-5))*8;
+  exprSmile   = exprSmile  *0.9+Math.max(0,Math.min(1,rs))*0.1;
+  exprTension = exprTension*0.9+Math.max(0,Math.min(1,rt))*0.1;
+  mouthOpen   = mouthOpen  *0.9+Math.max(0,Math.min(1,ro))*0.1;
+}
+
+function updatePose(lms){
+  var cx=(lms[234].x+lms[454].x)*0.5;
+  var cy=(lms[10].y+lms[152].y)*0.5;
+  var ry=(lms[4].x-cx)*5.5;
+  var rp=(lms[4].y-cy)*5.5;
+  smoothYaw  =smoothYaw  *0.88+ry*0.12;
+  smoothPitch=smoothPitch*0.88+rp*0.12;
+  motionMag  =motionMag  *0.90+Math.min(1,Math.sqrt(ry*ry+rp*rp)*0.55)*0.10;
+}
+
+function updateColorTarget(){
+  var net=exprSmile-exprTension*0.65;
+  if(net>0.06){
+    tgtH=20+net*30; tgtS=65+net*28; tgtL=60+net*18;
+  } else if(net<-0.05){
+    var m=Math.min(1,-net*1.4);
+    tgtH=212+m*38; tgtS=55+m*28; tgtL=55+m*12;
+  } else {
+    tgtH=45; tgtS=10; tgtL=80;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  STATUS + BARS UI
+// ─────────────────────────────────────────────
+var EXPR_WORDS=[
+  ['NEUTRAL','CALM','STILL','PRESENT','COMPOSED'],
+  ['WARM','BRIGHT','OPEN','JOYFUL','ALIVE'],
+  ['TENSE','FOCUSED','SERIOUS','CLOSED','TIGHT']
+];
+var exprWI=0, exprWF=0;
+
+function updateUI(){
+  // Face line
+  document.getElementById('st-face').textContent =
+    faceDetected ? '● FACE DETECTED' : '○ AWAITING FACE';
+  // Expression word
+  if(frame-exprWF>80){ exprWF=frame; exprWI=(exprWI+1)%5; }
+  var net=exprSmile-exprTension*0.65;
+  var cat = net>0.1?1:(net<-0.08?2:0);
+  var words=EXPR_WORDS[cat];
+  document.getElementById('st-expr').textContent='— '+words[exprWI%words.length];
+  // Bars
+  var warmth  = Math.max(0,Math.min(1, 0.5+(exprSmile-exprTension)*0.55));
+  var motion  = Math.max(0,Math.min(1, motionMag*1.2));
+  var openness= Math.max(0,Math.min(1, mouthOpen*1.3));
+  setBar('bd-warm', warmth);
+  setBar('bd-move', motion);
+  setBar('bd-open', openness);
+  // Warmth bar color
+  var bw=document.getElementById('bd-warm');
+  if(bw) bw.style.background = warmth>0.56 ? 'rgba(255,155,70,.75)' :
+    warmth<0.44 ? 'rgba(75,155,255,.75)' : 'rgba(255,255,255,.45)';
+}
+function setBar(id, v){
+  var el=document.getElementById(id);
+  if(el) el.style.left=Math.max(3,Math.min(97,v*100))+'%';
+}
+
+// ─────────────────────────────────────────────
+//  SOUND SYSTEM
+// ─────────────────────────────────────────────
+function initAudio(){
+  try {
+    var ac=new(window.AudioContext||window.webkitAudioContext)();
+    var blen=ac.sampleRate*3, buf=ac.createBuffer(1,blen,ac.sampleRate);
+    var data=buf.getChannelData(0);
+    for(var i=0;i<blen;i++) data[i]=Math.random()*2-1;
+    var noise=ac.createBufferSource(); noise.buffer=buf; noise.loop=true;
+
+    var bp=ac.createBiquadFilter(); bp.type='bandpass';
+    bp.frequency.value=280; bp.Q.value=18;
+
+    var osc1=ac.createOscillator(); osc1.type='sine'; osc1.frequency.value=55;
+    var osc2=ac.createOscillator(); osc2.type='sine'; osc2.frequency.value=82.4;
+    var osc3=ac.createOscillator(); osc3.type='triangle'; osc3.frequency.value=110;
+
+    var lfo=ac.createOscillator(); lfo.frequency.value=0.28;
+    var lfoG=ac.createGain(); lfoG.gain.value=6;
+    lfo.connect(lfoG); lfoG.connect(osc1.frequency);
+
+    var nG=ac.createGain(); nG.gain.value=0.14;
+    var oG=ac.createGain(); oG.gain.value=0.22;
+    var o3G=ac.createGain(); o3G.gain.value=0.08;
+    var master=ac.createGain(); master.gain.value=0;
+
+    noise.connect(bp); bp.connect(nG); nG.connect(master);
+    osc1.connect(oG); osc2.connect(oG); oG.connect(master);
+    osc3.connect(o3G); o3G.connect(master);
+    master.connect(ac.destination);
+
+    [noise,osc1,osc2,osc3,lfo].forEach(function(n){n.start();});
+    return {ac:ac,bp:bp,osc1:osc1,osc2:osc2,osc3:osc3,nG:nG,oG:oG,o3G:o3G,master:master};
+  } catch(e){ return null; }
+}
+
+function updateAudio(){
+  if(!AN||!soundOn) return;
+  var ac=AN.ac, now=ac.currentTime;
+  var st=STYLES[curStyle];
+  var lo=st.aFreq[0], hi=st.aFreq[1];
+  var normYaw=0.5+smoothYaw*0.45;
+  var freq=lo+(hi-lo)*Math.max(0,Math.min(1,normYaw));
+  AN.bp.frequency.setTargetAtTime(freq,now,0.08);
+  AN.bp.Q.setTargetAtTime(st.aQ+exprSmile*20,now,0.18);
+  AN.osc1.frequency.setTargetAtTime(st.aBase+smoothPitch*22,now,0.12);
+  AN.osc2.frequency.setTargetAtTime(st.aBase*1.498+smoothPitch*14,now,0.12);
+  AN.osc3.frequency.setTargetAtTime(st.aBase*2+smoothPitch*8,now,0.14);
+  AN.nG.gain.setTargetAtTime(0.10+Math.min(0.45,motionMag),now,0.06);
+  AN.oG.gain.setTargetAtTime(0.18+exprSmile*0.2,now,0.15);
+  AN.o3G.gain.setTargetAtTime(0.04+mouthOpen*0.12,now,0.18);
+}
+
+function updateAudioForStyle(){
+  if(!AN||!soundOn) return;
+  var ac=AN.ac;
+  AN.osc2.frequency.setTargetAtTime(STYLES[curStyle].aBase*1.498, ac.currentTime, 0.5);
+}
+
+document.getElementById('sound-btn').addEventListener('click', function(){
+  if(!AN) AN=initAudio();
+  soundOn=!soundOn;
+  if(AN){
+    if(AN.ac.state==='suspended') AN.ac.resume();
+    AN.master.gain.setTargetAtTime(soundOn?0.78:0, AN.ac.currentTime, 0.35);
+  }
+  this.textContent=soundOn?'SOUND [ON]':'SOUND [OFF]';
+  this.classList.toggle('on',soundOn);
+});
+
+// ─────────────────────────────────────────────
+//  MEDIAPIPE
+// ─────────────────────────────────────────────
+var fm, fmReady=false;
+
+function setupFaceMesh(){
+  fm=new FaceMesh({locateFile:function(f){
+    return 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/'+f;
+  }});
+  fm.setOptions({maxNumFaces:1,refineLandmarks:true,
+    minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+  fm.onResults(onResults);
+  fm.initialize().then(function(){ fmReady=true; startCamera(); })
+    .catch(function(){ document.getElementById('overlay').classList.remove('hidden'); });
+}
+
+function onResults(res){
+  prevFaceDet=faceDetected;
+  if(res.multiFaceLandmarks&&res.multiFaceLandmarks.length>0){
+    var lms=res.multiFaceLandmarks[0];
+    faceDetected=true;
+    if(particles.length===0) particles=buildParticles(lms);
+    else updateTargets(lms);
+    detectExpression(lms);
+    updatePose(lms);
+  } else {
+    faceDetected=false;
+    if(prevFaceDet&&particles.length>0){
+      // Scatter on face loss
+      for(var i=0;i<particles.length;i++){
+        particles[i].tx=particles[i].scatterX;
+        particles[i].ty=particles[i].scatterY;
+      }
+    }
+  }
+  updateColorTarget();
+}
+
+function startCamera(){
+  try {
+    var cam=new Camera(video,{
+      onFrame:async function(){if(fmReady) await fm.send({image:video});},
+      width:640,height:480
+    });
+    cam.start()
+      .then(function(){ document.getElementById('overlay').classList.add('hidden'); })
+      .catch(fallbackCamera);
+  } catch(e){ fallbackCamera(); }
+}
+
+function fallbackCamera(){
+  navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}})
+    .then(function(stream){
+      video.srcObject=stream; video.play();
+      document.getElementById('overlay').classList.add('hidden');
+      setInterval(function(){
+        if(fmReady&&video.readyState>=2) fm.send({image:video}).catch(function(){});
+      },33);
+    })
+    .catch(function(e){
+      document.getElementById('overlay').innerHTML=
+        '<h2>CAMERA BLOCKED</h2>'+
+        '<div>Serve over HTTP to enable camera:</div><br>'+
+        '<code>python3 -m http.server 8080</code>'+
+        '<div style="margin-top:14px;font-size:9px;color:rgba(255,80,80,.45)">'+
+        (e.name||'Error')+'</div>';
+    });
+}
+
+function tryStart(){
+  document.getElementById('overlay').classList.add('hidden');
+  if(typeof FaceMesh!=='undefined') setupFaceMesh();
+  else {
+    setTimeout(function(){
+      if(typeof FaceMesh!=='undefined') setupFaceMesh();
+      else document.getElementById('overlay').classList.remove('hidden');
+    },1200);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  RENDER LOOP
+// ─────────────────────────────────────────────
+function render(){
+  requestAnimationFrame(render);
+  frame++;
+
+  // Style blend
+  styleBlend=Math.min(1, styleBlend+0.045);
+
+  // Trail — pure black, alpha blended per style
+  var tA=lerp(STYLES[prevStyle].trail, STYLES[curStyle].trail, styleBlend);
+  ctx.globalAlpha=tA;
+  ctx.fillStyle='#000';
+  ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=1;
+
+  var t=frame*0.016;
+
+  // Spring indicator
+  var df=indTargY-indY;
+  indVY=(indVY+df*0.12)*0.80; // spring 0.12, damping 0.80 → nice overshoot
+  indY+=indVY;
+  document.getElementById('indicator').style.top=indY+'px';
+
+  // Particles
+  ctx.shadowBlur=0;
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    p.update();
+    var pr=getProps(p,t);
+    var a=Math.min(0.95,pr.a);
+    if(a<0.01) continue;
+    ctx.globalAlpha=a;
+
+    if(pr.blur>0){
+      ctx.shadowBlur=pr.blur;
+      ctx.shadowColor='hsl('+pr.h+','+pr.s+'%,'+(pr.l+22)+'%)';
+    } else { ctx.shadowBlur=0; }
+
+    ctx.fillStyle='hsl('+pr.h+','+pr.s+'%,'+pr.l+'%)';
+
+    if(pr.fiber){
+      ctx.save();
+      ctx.translate(p.x+(pr.ox||0), p.y+(pr.oy||0));
+      ctx.rotate(pr.rot||0);
+      ctx.scale(0.45, 2.4);
+      ctx.beginPath(); ctx.arc(0,0,Math.max(0.3,pr.sz),0,6.283); ctx.fill();
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x+(pr.ox||0), p.y+(pr.oy||0), Math.max(0.3,pr.sz), 0, 6.283);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1; ctx.shadowBlur=0;
+
+  // UI refresh (throttled)
+  if(frame%3===0){ updateUI(); }
+  if(frame%6===0){ updateAudio(); }
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+// Dot matrix
+(function(){
+  var dm=document.getElementById('dm');
+  for(var i=0;i<27;i++){
+    var d=document.createElement('div'); d.className='dm';
+    d.style.opacity=0.10+Math.random()*0.32; dm.appendChild(d);
+  }
+})();
+
+// Auto-start on http/https
+if(window.location.protocol!=='file:'){
+  window.addEventListener('load', function(){
+    document.getElementById('overlay').classList.add('hidden');
+    setTimeout(function(){
+      if(typeof FaceMesh!=='undefined') setupFaceMesh();
+      else setTimeout(function(){
+        if(typeof FaceMesh!=='undefined') setupFaceMesh();
+      },1200);
+    },200);
+  });
+}
+
+render();
+</script>
+</body>
+</html>
