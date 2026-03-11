@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <button onclick="start()">Start</button>
+    <script type="module">
+        import { repl, evalCode, getAudioContext } from 'https://cdn.skypack.dev/@strudel/web';
+        window.start = async () => {
+            await getAudioContext().resume();
+            await evalCode(`
+$:sound("jazz:0 circuitsdrumtracks_bd:0 [jazz:4 jazz:2] drumulator_bd:3*2")
+$:"<0 2 4 6 ~ 4 ~ 2 0!3 ~!5>*8"
+  .layer(x=>x.add("0,2"))
+  .scale('C minor').note();
+$:note("c3 e3 f3 g3").attack("<0 .1 .5>");
+$:n(stack(sine,cosine).segment(8).range(0,2))
+.scale("C:minor");
+$:note("g2")
+sound('pipeorgan_loud_pedal');
+    `);
+        }
+    </script>
+</body>
+
+</html>

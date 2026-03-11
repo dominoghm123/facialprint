@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button onclick="start()">Start</button>
+<input type="range" id="d_val" min="0" max="10" step="0.1" value="0">
+<script type="module">
+  import { evalCode, getAudioContext } from 'https://cdn.skypack.dev/@strudel/web';
+  window.myDist = 0;
+  setInterval(() => {
+    window.myDist = parseFloat(document.getElementById('d_val').value);
+  }, 100);
+  window.start = async () => {
+    await getAudioContext().resume();
+    await evalCode(`
+$:sound("bd sd").crush(() => window.myDist * 0.1)
+    `);
+  }
+</script>
+</body>
+</html>

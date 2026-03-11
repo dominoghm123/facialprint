@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@strudel/embed@latest/dist/index.js"></script>
+</head>
+<body>
+  <button id="btn">Update Code</button>
+  <strudel-repl id="strudel_env">
+    samples('https://strudel.cc/samples')
+    $:sound("bd sd")
+  </strudel-repl>
+  <script>
+    document.getElementById('btn').addEventListener('click', () => {
+      document.getElementById('strudel_env').setAttribute('code', `
+        samples('https://strudel.cc/samples')
+        $:sound("jazz:0 circuitsdrumtracks_bd:0")
+      `);
+      document.getElementById('strudel_env').evaluate();
+    });
+  </script>
+</body>
+</html>

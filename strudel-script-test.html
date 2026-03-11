@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button id="btn">Start Strudel</button>
+<script type="module">
+  import { evalCode, getAudioContext } from 'https://cdn.skypack.dev/@strudel/web';
+  document.getElementById('btn').addEventListener('click', async () => {
+    await getAudioContext().resume();
+    await evalCode(`
+$:sound("bd sd")
+    `);
+    console.log("evaluated");
+  });
+</script>
+</body>
+</html>
