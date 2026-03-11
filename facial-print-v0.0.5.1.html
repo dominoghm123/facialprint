@@ -653,22 +653,33 @@
         //  CFG ── V0.0.5.1: 1.5x density, 1.5x smaller dots, 1.5x face size
         // ════════════════════════════════════════════════════════════════════════════
         var CFG = {
-            MIN_SH: 0.020,
-            GAMMA: 1.65,    // STEEPER curve for RICHER gradation (darker shadows)
-            RADIUS_MAX: 1.2,     // 1.8 / 1.5 = 1.2 (smaller)
-            RADIUS_THRESHOLD: 0.02,
-            RADIUS_EXP: 1.45,    // More dramatic size changes
-            SPREAD: 2.4,
-            MIN_CNT: 9,       // 6 * 1.5 = 9 (denser)
-            EXTRA: 33,      // 22 * 1.5 = 33 (denser)
-            FRAME_H: 1.50,    // 1.50 (bigger)
-            FRAME_W: 1.50,    // 1.50 (bigger)
+            MIN_SH: 0.015,         // 降低门槛，让两颊微弱起伏也能生出粒子
+            GAMMA: 1.85,           // 提高伽马，增加明暗对比，使五官更立体
+            RADIUS_MAX: 1.3,
+            RADIUS_THRESHOLD: 0.01,
+            RADIUS_EXP: 1.6,
+            SPREAD_BASE: 30.0,     // 皮肤区域的扩散值（保持自然）
+            SPREAD_FEAT: 1.5,      // 五官区域的扩散值（极小，保持边界锐利）
+            MIN_CNT: 80,
+            EXTRA: 320,            // 极大密度，配合小尺寸实现“素描感”
+            FRAME_H: 1.60,
+            FRAME_W: 1.60,
             TRAIL: 0.22,
-            // suppression zones
-            HAIR_THR: -0.40, HAIR_STR: 0.85,
-            NECK_THR: 0.42, NECK_STR: 0.40,
-            EDGE_THR: 0.45, EDGE_STR: 0.35
+            // 抑制参数优化
+            HAIR_THR: -0.42, HAIR_STR: 0.85,
+            NECK_THR: 0.45, NECK_STR: 0.40,
+            EDGE_THR: 0.55, EDGE_STR: 0.25   // 放宽 EDGE_THR，避免两颊粒子被切掉
         };
+
+        // 五官地标索引参考（用于自适应）
+        const FEAT_LMS = [
+            // 嘴唇
+            0, 11, 12, 13, 14, 15, 16, 17, 37, 38, 39, 40, 41, 42, 61, 291,
+            // 眼睛
+            33, 133, 157, 158, 159, 160, 161, 263, 362, 384, 385, 386, 387, 388,
+            // 鼻子边界
+            1, 2, 98, 327, 102, 331, 168, 197, 5, 4
+        ];
 
         // ════════════════════════════════════════════════════════════════════════════
         //  STYLES ── Expanded L range for " richer gradation"
@@ -745,12 +756,23 @@
                 var lm = lms[i];
                 var sh = Math.max(0, Math.min(1, 0.5 - lm.z * 4.5));
                 if (sh < CFG.MIN_SH) continue;
+
+                // 判断是否为五官特征点
+                var isFeat = FEAT_LMS.indexOf(i) !== -1;
+
+                // 两颊提亮：如果是侧面或两颊地标，人为提升一点 sh 权重
+                if (!isFeat && Math.abs(lm.x - 0.5) > 0.15) sh *= 1.25;
+
                 var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
                 var fx = 1 - lm.x;
                 var dx = fx * 2 - 1;
                 var dy = lm.y * 2 - 1;
+
+                // 根据特征动态调整散开半径
+                var curSpread = isFeat ? CFG.SPREAD_FEAT : CFG.SPREAD_BASE;
+
                 for (var j = 0; j < count; j++) {
-                    var ro = Math.sqrt(Math.random()) * CFG.SPREAD;
+                    var ro = Math.sqrt(Math.random()) * curSpread;
                     var ang = Math.random() * Math.PI * 2;
                     dots.push({
                         lmIdx: i,
@@ -758,7 +780,8 @@
                         oy: Math.sin(ang) * ro,
                         sh: sh,
                         dx: dx,
-                        dy: dy
+                        dy: dy,
+                        isFeat: isFeat // 存入缓存
                     });
                 }
             }
@@ -767,17 +790,23 @@
         // ════════════════════════════════════════════════════════════════════════════
         //  STYLE COLOR CALC ── Steeper alpha and L mapping for more contrast
         // ════════════════════════════════════════════════════════════════════════════
-        function computeDotProps(sh, dx, dy, si) {
+        function computeDotProps(sh, dx, dy, si, isFeat) {
             var st = STYLES[si];
-            var hair = dy < CFG.HAIR_THR ? Math.min(1, (-dy - Math.abs(CFG.HAIR_THR)) * 3.0) : 0;
-            var neck = dy > CFG.NECK_THR ? Math.min(1, (dy - CFG.NECK_THR) * 2.8) : 0;
-            var edge = Math.max(0, Math.abs(dx) - CFG.EDGE_THR) * 2.5;
+            var hair = dy < CFG.HAIR_THR ? Math.min(1, (-dy - Math.abs(CFG.HAIR_THR)) * 3.5) : 0;
+            var neck = dy > CFG.NECK_THR ? Math.min(1, (dy - CFG.NECK_THR) * 3.0) : 0;
+            var edge = Math.max(0, Math.abs(dx) - CFG.EDGE_THR) * 2.2;
+
+            // 增强对比度的有效阴影值
             var shEff = sh * Math.max(0.04, 1 - hair * CFG.HAIR_STR - neck * CFG.NECK_STR - edge * CFG.EDGE_STR);
             if (shEff < CFG.RADIUS_THRESHOLD) return null;
 
-            var sz = CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
-            // Richer gradation: steeper alpha and lightness mapping
-            var a = 0.12 + Math.pow(shEff, 0.8) * 0.78;
+            // 核心改进：针对五官微调尺寸，让特征更清晰
+            var sizeBase = isFeat ? CFG.RADIUS_MAX * 0.85 : CFG.RADIUS_MAX;
+            var sz = sizeBase * Math.pow(shEff, CFG.RADIUS_EXP);
+
+            // 阶度丰富化：使用复合指数函数，增加明暗过渡的层次
+            var a = 0.1 + Math.pow(shEff, 0.7) * 0.85;
+
             return {
                 h: st.hFn(shEff),
                 s: st.sFn(shEff),
@@ -819,12 +848,12 @@
                 var d = dots[i];
                 var lm = lastLandmarks[d.lmIdx];
                 var sh = Math.max(0, Math.min(1, 0.5 - lm.z * 4.5));
-                var pC = computeDotProps(sh, d.dx, d.dy, curStyle);
+                var pC = computeDotProps(sh, d.dx, d.dy, curStyle, d.isFeat);
                 var props;
                 if (styleBlend >= 1) {
                     props = pC;
                 } else {
-                    var pP = computeDotProps(sh, d.dx, d.dy, prevStyle);
+                    var pP = computeDotProps(sh, d.dx, d.dy, prevStyle, d.isFeat);
                     props = lerpDotProps(pP, pC, styleBlend);
                 }
                 if (!props || props.sz < 0.10) continue;
