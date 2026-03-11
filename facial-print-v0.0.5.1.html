@@ -653,22 +653,22 @@
         //  CFG ── V0.0.5.1: 1.5x density, 1.5x smaller dots, 1.5x face size
         // ════════════════════════════════════════════════════════════════════════════
         var CFG = {
-            MIN_SH: 0.012,         // 降低门槛，找回失踪的两颊
-            GAMMA: 1.55,           // 适度下调：让阴影过渡更平滑，不至于黑白分明
-            RADIUS_MAX: 1.35,
+            MIN_SH: 0.008,         // 降低门槛，找回失踪的两颊和额头
+            GAMMA: 1.45,           // 进一步下调：让阴影过渡更平滑
+            RADIUS_MAX: 1.45,
             RADIUS_THRESHOLD: 0.01,
-            RADIUS_EXP: 1.5,
-            SPREAD_BASE: 14.0,     // 👈 调低扩散：解决“肿大”
-            SPREAD_FEAT: 3.5,      // 👈 调高特征扩散：解决“佛珠”
-            MIN_CNT: 35,           // 👈 显著调低单点生成量：减少重叠导致的白块
-            EXTRA: 120,            // 👈 保持总量可控，约 2.5-4 万粒子
+            RADIUS_EXP: 1.35,
+            SPREAD_BASE: 45.0,     // 👈 极大扩散：彻底消除“点阵球”感，填满皮肤
+            SPREAD_FEAT: 2.8,      // 👈 调低特征扩散：让边界更致密
+            MIN_CNT: 20,           // 👈 调低单点生成量：减少地标中心堆积
+            EXTRA: 100,            // 👈 配合大扩散填补空间
             FRAME_H: 1.60,
             FRAME_W: 1.60,
             TRAIL: 0.22,
             // 抑制参数优化
             HAIR_THR: -0.42, HAIR_STR: 0.85,
             NECK_THR: 0.45, NECK_STR: 0.40,
-            EDGE_THR: 0.60, EDGE_STR: 0.20   // 👈 放得更宽
+            EDGE_THR: 0.65, EDGE_STR: 0.15   // 👈 继续放宽，找回侧脸边界
         };
 
         // 五官地标索引参考（用于自适应细节勾勒）
@@ -677,11 +677,17 @@
             61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 185, 40, 39, 37, 0, 267, 269, 270, 409,
             // 完整的眼睛（包括上、下眼睑所有关键点）
             33, 133, 157, 158, 159, 160, 161, 246, 7, 163, 144, 145, 153, 154, 155, 362, 263, 384, 385, 386, 387, 388, 466, 249, 390, 373, 374, 380, 381, 382,
-            // 鼻子（鼻型核心点：桥梁、鼻翼边缘、鼻尖下缘）
+            // 眉毛（新增：锁定眉弓边界）
+            70, 63, 105, 66, 107, 55, 65, 52, 53, 46,
+            300, 293, 334, 296, 336, 285, 295, 282, 283, 276,
+            // 鼻子（鼻型核心点）
             168, 6, 197, 195, 5, 4, 1, 19, 94, 2, 102, 331, 20, 242, 462,
-            // 下巴与下颌骨定义线（强化脸部轮廓分离）
-            152, 148, 176, 149, 150, 175, 199, 200, 377, 400, 378, 379, 365, 397, 288, 361, 323, 454, 356, 389, 251, 284, 332, 297, 338, 10, 109, 67, 103, 54, 21, 162, 127, 234, 93, 132, 58, 172, 136, 150, 149, 176, 148
+            // 下巴与轮廓线
+            152, 148, 176, 149, 150, 175, 199, 200, 377, 400, 378, 379
         ];
+
+        // 👈 需要消除的中轴线“佛珠”点
+        const AXIS_LMS = [1, 4, 10, 151, 108, 152, 14, 13, 19, 94];
 
         // ════════════════════════════════════════════════════════════════════════════
         //  STYLES ── Expanded L range for " richer gradation"
@@ -761,17 +767,20 @@
                 if (sh < CFG.MIN_SH) continue;
 
                 var isFeat = FEAT_LMS.indexOf(i) !== -1;
+                var isAxis = AXIS_LMS.indexOf(i) !== -1;
                 var fx = 1 - lm.x;
                 var dx = fx * 2 - 1;
 
-                // 核心策略：自适应扩散，且引入中轴随机抖动
+                // 核心策略：中轴点消音 + 极大扩散去珠化
+                var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
+                if (isAxis) count = Math.floor(count * 0.25); // 极大削减中轴粒子
+
                 var curSpread = isFeat ? CFG.SPREAD_FEAT : CFG.SPREAD_BASE;
 
-                // 👈 关键点：人为在地标位置加一个 1-2 像素的“抖动”，打破佛珠般死板的排列
-                var jitterX = (Math.random() - 0.5) * 1.5;
-                var jitterY = (Math.random() - 0.5) * 1.5;
+                // 增加更大幅度的随机抖动，彻底打碎地标阵列感
+                var jitterX = (Math.random() - 0.5) * 4.0;
+                var jitterY = (Math.random() - 0.5) * 4.0;
 
-                var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
                 for (var j = 0; j < count; j++) {
                     var ro = Math.sqrt(Math.random()) * curSpread;
                     var ang = Math.random() * Math.PI * 2;
@@ -798,14 +807,14 @@
             var edge = Math.max(0, Math.abs(dx) - CFG.EDGE_THR) * 2.2;
 
             var suppression = Math.max(0.04, 1 - hair * CFG.HAIR_STR - neck * CFG.NECK_STR - edge * CFG.EDGE_STR);
-            // 软化对比度曲线：Math.pow(sh, 1.2) 让中间调（两颊）更容易显现
-            var shEff = Math.pow(sh, 1.2) * suppression;
+            // 调低指数 sh^1.15：让低对比度区域（面颊）的显色更自然
+            var shEff = Math.pow(sh, 1.15) * suppression;
 
             if (shEff < CFG.RADIUS_THRESHOLD) return null;
 
-            // 让粒子透明度随 shEff 变化更线性，避免硬切
-            var a = (isFeat ? 0.88 : 0.62) * (0.05 + shEff * 0.9);
-            var sz = (isFeat ? 0.95 : 1.25) * CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
+            // 增强基础不透明度 a，保证皮肤区域不是漆黑一片
+            var a = (isFeat ? 0.90 : 0.55) * (0.08 + shEff * 0.92);
+            var sz = (isFeat ? 0.95 : 1.35) * CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
 
             return {
                 h: st.hFn(shEff),
