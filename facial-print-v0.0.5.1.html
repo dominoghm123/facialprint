@@ -414,14 +414,17 @@
                 var fx = 1 - lm.x;
                 var dx = fx * 2 - 1;
 
-                // 还原当初你最喜欢的逻辑：针对五官使用极小扩散（0.35），普通皮肤使用配置扩散
+                // 扩散策略
                 var curSpread = isFeat ? 0.35 : CFG.SPREAD_BASE;
-                if (Math.abs(dx) < 0.025) curSpread *= 0.35; // 垂直中轴压缩
 
-                // 下巴细节补偿
+                // 下巴细节补充
                 if (i === 152 || i === 175) sh *= 1.2;
 
                 var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
+
+                // 👈 核心修改：彻底抑制中轴点数量，消除“中轴佛珠”现象
+                if (isAxis) count = Math.floor(count * 0.12);
+
                 for (var j = 0; j < count; j++) {
                     var ro = Math.sqrt(Math.random()) * curSpread;
                     var ang = Math.random() * Math.PI * 2;
