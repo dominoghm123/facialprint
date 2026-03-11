@@ -923,21 +923,20 @@
         //  CFG ── V0.0.5.1: 1.5x density, 1.5x smaller dots, 1.5x face size
         // ════════════════════════════════════════════════════════════════════════════
         var CFG = {
-            MIN_SH: 0.008,         // 降低门感，捕获微弱轮廓
-            GAMMA: 1.42,           // 👈 调低 GAMMA：找回由于高对比度失踪的额头与面颊
-            RADIUS_MAX: 1.40,
-            RADIUS_THRESHOLD: 0.01,
-            RADIUS_EXP: 1.40,
-            SPREAD_BASE: 42.0,     // 👈 极大扩散：彻底打碎点阵感，填满皮肤空隙
-            SPREAD_FEAT: 2.4,      // 👈 适中扩散：平衡边界清晰度与避免“佛珠”感
-            MIN_CNT: 55,           // 👈 密度平衡：既有素描厚重感，又不至于重叠过曝
-            EXTRA: 180,
+            MIN_SH: 0.022,
+            GAMMA: 1.25,
+            RADIUS_MAX: 1.8,
+            RADIUS_THRESHOLD: 0.03,
+            RADIUS_EXP: 1.25,
+            SPREAD: 2.4,
+            MIN_CNT: 10,
+            EXTRA: 30,
             FRAME_H: 1.60,
             FRAME_W: 1.60,
             TRAIL: 0.22,
-            HAIR_THR: -0.42, HAIR_STR: 0.85,
-            NECK_THR: 0.45, NECK_STR: 0.40,
-            EDGE_THR: 0.65, EDGE_STR: 0.15
+            HAIR_THR: -0.38, HAIR_STR: 0.82,
+            NECK_THR: 0.40, NECK_STR: 0.38,
+            EDGE_THR: 0.40, EDGE_STR: 0.30
         };
 
         var FEAT_LMS = [33, 133, 157, 158, 159, 160, 161, 246, 263, 362, 384, 385, 386, 387, 388, 466, 1, 2, 98, 327, 4, 168, 6, 197, 195, 5, 61, 291, 0, 13, 14, 17, 37, 38, 39, 40, 41, 42, 267, 268, 269, 270, 271, 272];
@@ -946,26 +945,11 @@
         //  STYLES ── Expanded L range for " richer gradation"
         // ════════════════════════════════════════════════════════════════════════════
         var STYLES = [
-            {
-                name: 'INK', sub: 'DISSOLVED', trail: 0.22,
-                hFn: function (s) { return 212 + s * 16; }, sFn: function (s) { return 4 + s * 22; }, lFn: function (s) { return 2 + Math.pow(s, 1.2) * 82; }
-            },
-            {
-                name: 'DUST', sub: 'SCATTERED', trail: 0.26,
-                hFn: function (s) { return 30 + s * 12; }, sFn: function (s) { return 6 + s * 26; }, lFn: function (s) { return 3 + Math.pow(s, 1.2) * 80; }
-            },
-            {
-                name: 'AMBER', sub: 'BURNING', trail: 0.18,
-                hFn: function (s) { return 28 + s * 18; }, sFn: function (s) { return 50 + s * 35; }, lFn: function (s) { return 3 + Math.pow(s, 1.1) * 78; }
-            },
-            {
-                name: 'AURORA', sub: 'RADIANT', trail: 0.20,
-                hFn: function (s) { return 160 + s * 85; }, sFn: function (s) { return 30 + s * 55; }, lFn: function (s) { return 2 + Math.pow(s, 1.2) * 78; }
-            },
-            {
-                name: 'VELVET', sub: 'DENSE', trail: 0.28,
-                hFn: function (s) { return 270 + s * 24; }, sFn: function (s) { return 15 + s * 40; }, lFn: function (s) { return 2 + Math.pow(s, 1.1) * 74; }
-            }
+            { name: 'INK', sub: 'DISSOLVED', trail: 0.22, hFn: s => 212 + s * 16, sFn: s => 5 + s * 18, lFn: s => 4 + s * 76 },
+            { name: 'DUST', sub: 'SCATTERED', trail: 0.26, hFn: s => 30 + s * 10, sFn: s => 8 + s * 22, lFn: s => 6 + s * 74 },
+            { name: 'AMBER', sub: 'BURNING', trail: 0.18, hFn: s => 28 + s * 14, sFn: s => 55 + s * 30, lFn: s => 6 + s * 70 },
+            { name: 'AURORA', sub: 'RADIANT', trail: 0.20, hFn: s => 160 + s * 80, sFn: s => 35 + s * 50, lFn: s => 5 + s * 72 },
+            { name: 'VELVET', sub: 'DENSE', trail: 0.28, hFn: s => 270 + s * 20, sFn: s => 18 + s * 35, lFn: s => 4 + s * 68 }
         ];
         var curStyle = 0, prevStyle = 0, styleBlend = 1;
         var tripleSelectedIndices = [];
@@ -1015,41 +999,22 @@
 
         function buildDotCache(lms) {
             dots = [];
-            for (var i = 0; i < lms.length; i++) {
+            for (let i = 0; i < lms.length; i++) {
                 var lm = lms[i];
-                var rawSh = 0.5 - lm.z * 4.6;
-                var sh = Math.max(0, Math.min(1, rawSh));
+                var sh = Math.max(0, Math.min(1, 0.5 - lm.z * 4.5));
                 if (sh < CFG.MIN_SH) continue;
-
-                var isFeat = FEAT_LMS.indexOf(i) !== -1;
+                var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
                 var fx = 1 - lm.x;
                 var dx = fx * 2 - 1;
                 var dy = lm.y * 2 - 1;
-                var isAxis = Math.abs(dx) < 0.025;
-
-                // 核心策略：中轴消音 + 随机抖动
-                var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
-                // 👈 彻底去掉中竖线：中轴点生成的粒子数量大幅削减，且扩散增加
-                if (isAxis) count = Math.floor(count * 0.2);
-
-                var curSpread = isFeat ? CFG.SPREAD_FEAT : CFG.SPREAD_BASE;
-                if (isAxis) curSpread *= 2.0;
-
-                // 👈 关键：引入 2-3 像素的发射位置抖动，打碎地标点阵的规整感
-                var jitterX = (Math.random() - 0.5) * 3.5;
-                var jitterY = (Math.random() - 0.5) * 3.5;
-
                 for (var j = 0; j < count; j++) {
-                    var ro = Math.sqrt(Math.random()) * curSpread;
+                    var ro = Math.sqrt(Math.random()) * CFG.SPREAD;
                     var ang = Math.random() * Math.PI * 2;
                     dots.push({
-                        lmIdx: i,
-                        ox: Math.cos(ang) * ro + jitterX,
-                        oy: Math.sin(ang) * ro + jitterY,
-                        sh: sh,
-                        dx: dx,
-                        dy: dy,
-                        isFeat: isFeat
+                        idx: i,
+                        ox: Math.cos(ang) * ro,
+                        oy: Math.sin(ang) * ro,
+                        sh: sh, dx: dx, dy: dy
                     });
                 }
             }
@@ -1058,29 +1023,17 @@
         // ════════════════════════════════════════════════════════════════════════════
         //  STYLE COLOR CALC ── Steeper alpha and L mapping for more contrast
         // ════════════════════════════════════════════════════════════════════════════
-        function computeDotProps(sh, dx, dy, si, isFeat) {
+        function computeDotProps(d, si) {
             var st = STYLES[si];
-            var hair = dy < CFG.HAIR_THR ? Math.min(1, (-dy - Math.abs(CFG.HAIR_THR)) * 3.0) : 0;
-            var neck = dy > CFG.NECK_THR ? Math.min(1, (dy - CFG.NECK_THR) * 2.8) : 0;
-            var edge = Math.max(0, Math.abs(dx) - CFG.EDGE_THR) * 2.2;
-
-            var suppression = Math.max(0.04, 1 - hair * CFG.HAIR_STR - neck * CFG.NECK_STR - edge * CFG.EDGE_STR);
-            // 软化对比度曲线：Math.pow(sh, 1.2) 让中间调（两颊）更容易显现
-            var shEff = Math.pow(sh, 1.2) * suppression;
-
+            var hair = d.dy < CFG.HAIR_THR ? Math.min(1, (-d.dy - Math.abs(CFG.HAIR_THR)) * 2.8) : 0;
+            var neck = d.dy > CFG.NECK_THR ? Math.min(1, (d.dy - CFG.NECK_THR) * 2.5) : 0;
+            var edge = Math.max(0, Math.abs(d.dx) - CFG.EDGE_THR) * 2.2;
+            var shEff = d.sh * Math.max(0.06, 1 - hair * CFG.HAIR_STR - neck * CFG.NECK_STR - edge * CFG.EDGE_STR);
             if (shEff < CFG.RADIUS_THRESHOLD) return null;
 
-            // 让粒子透明度随 shEff 变化更线性，避免硬切
-            var a = (isFeat ? 0.88 : 0.62) * (0.05 + shEff * 0.9);
-            var sz = (isFeat ? 0.95 : 1.25) * CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
-
-            return {
-                h: st.hFn(shEff),
-                s: st.sFn(shEff),
-                l: st.lFn(shEff),
-                sz: sz,
-                a: a
-            };
+            var sz = CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
+            var a = 0.18 + shEff * 0.68;
+            return { h: st.hFn(shEff), s: st.sFn(shEff), l: st.lFn(shEff), sz, a };
         }
 
         function lerpDotProps(pA, pB, t) {
@@ -1113,22 +1066,22 @@
             clipOval(lastLandmarks);
             for (var i = 0; i < dots.length; i++) {
                 var d = dots[i];
-                var lm = lastLandmarks[d.lmIdx];
-                var sh = Math.max(0, Math.min(1, 0.5 - lm.z * 4.6));
-                var pC = computeDotProps(sh, d.dx, d.dy, curStyle, d.isFeat);
                 var props;
                 if (styleBlend >= 1) {
-                    props = pC;
+                    props = computeDotProps(d, curStyle);
                 } else {
-                    var pP = computeDotProps(sh, d.dx, d.dy, prevStyle, d.isFeat);
+                    var pC = computeDotProps(d, curStyle);
+                    var pP = computeDotProps(d, prevStyle);
                     props = lerpDotProps(pP, pC, styleBlend);
                 }
                 if (!props || props.sz < 0.10) continue;
-                var fx = 1 - lm.x;
-                var x = FR.x + fx * FR.w + d.ox;
-                var y = FR.y + lm.y * FR.h + d.oy;
+
+                var lm = lastLandmarks[d.idx];
+                var px = FR.x + (1 - lm.x) * FR.w + d.ox;
+                var py = FR.y + lm.y * FR.h + d.oy;
+
                 ctx.beginPath();
-                ctx.arc(x, y, props.sz, 0, Math.PI * 2);
+                ctx.arc(px, py, props.sz, 0, Math.PI * 2);
                 ctx.fillStyle = 'hsla(' + props.h + ',' + props.s + '%,' + props.l + '%,' + props.a + ')';
                 ctx.fill();
             }
