@@ -671,14 +671,16 @@
             EDGE_THR: 0.55, EDGE_STR: 0.25   // 放宽 EDGE_THR，避免两颊粒子被切掉
         };
 
-        // 五官地标索引参考（用于自适应）
+        // 五官地标索引参考（用于自适应细节勾勒）
         const FEAT_LMS = [
-            // 嘴唇
-            0, 11, 12, 13, 14, 15, 16, 17, 37, 38, 39, 40, 41, 42, 61, 291,
-            // 眼睛
-            33, 133, 157, 158, 159, 160, 161, 263, 362, 384, 385, 386, 387, 388,
-            // 鼻子边界
-            1, 2, 98, 327, 102, 331, 168, 197, 5, 4
+            // 嘴唇闭合轮廓（明确唇部边界）
+            61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 185, 40, 39, 37, 0, 267, 269, 270, 409,
+            // 完整的眼睛（包括上、下眼睑所有关键点）
+            33, 133, 157, 158, 159, 160, 161, 246, 7, 163, 144, 145, 153, 154, 155, 362, 263, 384, 385, 386, 387, 388, 466, 249, 390, 373, 374, 380, 381, 382,
+            // 鼻子（鼻型核心点：桥梁、鼻翼边缘、鼻尖下缘）
+            168, 6, 197, 195, 5, 4, 1, 19, 94, 2, 102, 331, 20, 242, 462,
+            // 下巴与下颌骨定义线（强化脸部轮廓分离）
+            152, 148, 176, 149, 150, 175, 199, 200, 377, 400, 378, 379, 365, 397, 288, 361, 323, 454, 356, 389, 251, 284, 332, 297, 338, 10, 109, 67, 103, 54, 21, 162, 127, 234, 93, 132, 58, 172, 136, 150, 149, 176, 148
         ];
 
         // ════════════════════════════════════════════════════════════════════════════
@@ -754,23 +756,24 @@
             dots = [];
             for (var i = 0; i < lms.length; i++) {
                 var lm = lms[i];
-                var sh = Math.max(0, Math.min(1, 0.5 - lm.z * 4.5));
+                // 压缩高光区计算：避免鼻尖和额头因为 sh 过高而堆积成团
+                var rawSh = 0.5 - lm.z * 4.8;
+                var sh = Math.max(0, Math.min(1, rawSh));
                 if (sh < CFG.MIN_SH) continue;
 
-                // 判断是否为五官特征点
                 var isFeat = FEAT_LMS.indexOf(i) !== -1;
-
-                // 两颊提亮：如果是侧面或两颊地标，人为提升一点 sh 权重
-                if (!isFeat && Math.abs(lm.x - 0.5) > 0.15) sh *= 1.25;
-
-                var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
                 var fx = 1 - lm.x;
                 var dx = fx * 2 - 1;
-                var dy = lm.y * 2 - 1;
 
-                // 根据特征动态调整散开半径
-                var curSpread = isFeat ? CFG.SPREAD_FEAT : CFG.SPREAD_BASE;
+                // 修正：针对五官使用极小扩散（0.35），针对普通皮肤使用配置扩散
+                // 同时，如果是中轴线点（dx 接近 0），强制减小扩散以消除垂直线
+                var curSpread = isFeat ? 0.35 : CFG.SPREAD_BASE;
+                if (Math.abs(dx) < 0.025) curSpread *= 0.35;
 
+                // 下巴细节补充：提升下颌底部地标的权重，使其在阴影中更突出
+                if (i === 152 || i === 175) sh *= 1.2;
+
+                var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
                 for (var j = 0; j < count; j++) {
                     var ro = Math.sqrt(Math.random()) * curSpread;
                     var ang = Math.random() * Math.PI * 2;
@@ -780,8 +783,8 @@
                         oy: Math.sin(ang) * ro,
                         sh: sh,
                         dx: dx,
-                        dy: dy,
-                        isFeat: isFeat // 存入缓存
+                        dy: lm.y * 2 - 1,
+                        isFeat: isFeat
                     });
                 }
             }
@@ -796,16 +799,17 @@
             var neck = dy > CFG.NECK_THR ? Math.min(1, (dy - CFG.NECK_THR) * 3.0) : 0;
             var edge = Math.max(0, Math.abs(dx) - CFG.EDGE_THR) * 2.2;
 
-            // 增强对比度的有效阴影值
-            var shEff = sh * Math.max(0.04, 1 - hair * CFG.HAIR_STR - neck * CFG.NECK_STR - edge * CFG.EDGE_STR);
+            var suppression = Math.max(0.04, 1 - hair * CFG.HAIR_STR - neck * CFG.NECK_STR - edge * CFG.EDGE_STR);
+            // 阶度非线性处理：增强阴影区的对比度和深度感
+            var shEff = Math.pow(sh, 1.35) * suppression;
+
             if (shEff < CFG.RADIUS_THRESHOLD) return null;
 
-            // 核心改进：针对五官微调尺寸，让特征更清晰
-            var sizeBase = isFeat ? CFG.RADIUS_MAX * 0.85 : CFG.RADIUS_MAX;
-            var sz = sizeBase * Math.pow(shEff, CFG.RADIUS_EXP);
+            // 核心改进：特征点使用更致密、更凝聚的微小粒子；普通区域粒子略大以填补空间
+            var sz = (isFeat ? 0.85 : 1.3) * CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
 
-            // 阶度丰富化：使用复合指数函数，增加明暗过渡的层次
-            var a = 0.1 + Math.pow(shEff, 0.7) * 0.85;
+            // 特征点不仅要准，还要通透
+            var a = (isFeat ? 0.92 : 0.70) * (0.1 + Math.pow(shEff, 0.7) * 0.85);
 
             return {
                 h: st.hFn(shEff),
