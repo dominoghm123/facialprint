@@ -653,22 +653,22 @@
         //  CFG ── V0.0.5.1: 1.5x density, 1.5x smaller dots, 1.5x face size
         // ════════════════════════════════════════════════════════════════════════════
         var CFG = {
-            MIN_SH: 0.015,         // 降低门槛，让两颊微弱起伏也能生出粒子
-            GAMMA: 1.85,           // 提高伽马，增加明暗对比，使五官更立体
-            RADIUS_MAX: 1.3,
+            MIN_SH: 0.012,         // 降低门槛，找回失踪的两颊
+            GAMMA: 1.55,           // 适度下调：让阴影过渡更平滑，不至于黑白分明
+            RADIUS_MAX: 1.35,
             RADIUS_THRESHOLD: 0.01,
-            RADIUS_EXP: 1.6,
-            SPREAD_BASE: 30.0,     // 皮肤区域的扩散值（保持自然）
-            SPREAD_FEAT: 1.5,      // 五官区域的扩散值（极小，保持边界锐利）
-            MIN_CNT: 80,
-            EXTRA: 320,            // 极大密度，配合小尺寸实现“素描感”
+            RADIUS_EXP: 1.5,
+            SPREAD_BASE: 14.0,     // 👈 调低扩散：解决“肿大”
+            SPREAD_FEAT: 3.5,      // 👈 调高特征扩散：解决“佛珠”
+            MIN_CNT: 35,           // 👈 显著调低单点生成量：减少重叠导致的白块
+            EXTRA: 120,            // 👈 保持总量可控，约 2.5-4 万粒子
             FRAME_H: 1.60,
             FRAME_W: 1.60,
             TRAIL: 0.22,
             // 抑制参数优化
             HAIR_THR: -0.42, HAIR_STR: 0.85,
             NECK_THR: 0.45, NECK_STR: 0.40,
-            EDGE_THR: 0.55, EDGE_STR: 0.25   // 放宽 EDGE_THR，避免两颊粒子被切掉
+            EDGE_THR: 0.60, EDGE_STR: 0.20   // 👈 放得更宽
         };
 
         // 五官地标索引参考（用于自适应细节勾勒）
@@ -756,8 +756,7 @@
             dots = [];
             for (var i = 0; i < lms.length; i++) {
                 var lm = lms[i];
-                // 压缩高光区计算：避免鼻尖和额头因为 sh 过高而堆积成团
-                var rawSh = 0.5 - lm.z * 4.8;
+                var rawSh = 0.5 - lm.z * 4.6;
                 var sh = Math.max(0, Math.min(1, rawSh));
                 if (sh < CFG.MIN_SH) continue;
 
@@ -765,13 +764,12 @@
                 var fx = 1 - lm.x;
                 var dx = fx * 2 - 1;
 
-                // 修正：针对五官使用极小扩散（0.35），针对普通皮肤使用配置扩散
-                // 同时，如果是中轴线点（dx 接近 0），强制减小扩散以消除垂直线
-                var curSpread = isFeat ? 0.35 : CFG.SPREAD_BASE;
-                if (Math.abs(dx) < 0.025) curSpread *= 0.35;
+                // 核心策略：自适应扩散，且引入中轴随机抖动
+                var curSpread = isFeat ? CFG.SPREAD_FEAT : CFG.SPREAD_BASE;
 
-                // 下巴细节补充：提升下颌底部地标的权重，使其在阴影中更突出
-                if (i === 152 || i === 175) sh *= 1.2;
+                // 👈 关键点：人为在地标位置加一个 1-2 像素的“抖动”，打破佛珠般死板的排列
+                var jitterX = (Math.random() - 0.5) * 1.5;
+                var jitterY = (Math.random() - 0.5) * 1.5;
 
                 var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
                 for (var j = 0; j < count; j++) {
@@ -779,8 +777,8 @@
                     var ang = Math.random() * Math.PI * 2;
                     dots.push({
                         lmIdx: i,
-                        ox: Math.cos(ang) * ro,
-                        oy: Math.sin(ang) * ro,
+                        ox: Math.cos(ang) * ro + jitterX,
+                        oy: Math.sin(ang) * ro + jitterY,
                         sh: sh,
                         dx: dx,
                         dy: lm.y * 2 - 1,
@@ -800,16 +798,14 @@
             var edge = Math.max(0, Math.abs(dx) - CFG.EDGE_THR) * 2.2;
 
             var suppression = Math.max(0.04, 1 - hair * CFG.HAIR_STR - neck * CFG.NECK_STR - edge * CFG.EDGE_STR);
-            // 阶度非线性处理：增强阴影区的对比度和深度感
-            var shEff = Math.pow(sh, 1.35) * suppression;
+            // 软化对比度曲线：Math.pow(sh, 1.2) 让中间调（两颊）更容易显现
+            var shEff = Math.pow(sh, 1.2) * suppression;
 
             if (shEff < CFG.RADIUS_THRESHOLD) return null;
 
-            // 核心改进：特征点使用更致密、更凝聚的微小粒子；普通区域粒子略大以填补空间
-            var sz = (isFeat ? 0.85 : 1.3) * CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
-
-            // 特征点不仅要准，还要通透
-            var a = (isFeat ? 0.92 : 0.70) * (0.1 + Math.pow(shEff, 0.7) * 0.85);
+            // 让粒子透明度随 shEff 变化更线性，避免硬切
+            var a = (isFeat ? 0.88 : 0.62) * (0.05 + shEff * 0.9);
+            var sz = (isFeat ? 0.95 : 1.25) * CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
 
             return {
                 h: st.hFn(shEff),
