@@ -653,22 +653,22 @@
         //  CFG ── V0.0.5.1: 1.5x density, 1.5x smaller dots, 1.5x face size
         // ════════════════════════════════════════════════════════════════════════════
         var CFG = {
-            MIN_SH: 0.008,         // 降低门槛，找回失踪的两颊和额头
-            GAMMA: 1.45,           // 进一步下调：让阴影过渡更平滑
-            RADIUS_MAX: 1.45,
+            MIN_SH: 0.008,         // 降低门感，捕获微弱轮廓
+            GAMMA: 1.42,           // 👈 调低 GAMMA：找回由于高对比度失踪的额头与面颊
+            RADIUS_MAX: 1.40,
             RADIUS_THRESHOLD: 0.01,
-            RADIUS_EXP: 1.35,
-            SPREAD_BASE: 45.0,     // 👈 极大扩散：彻底消除“点阵球”感，填满皮肤
-            SPREAD_FEAT: 2.8,      // 👈 调低特征扩散：让边界更致密
-            MIN_CNT: 20,           // 👈 调低单点生成量：减少地标中心堆积
-            EXTRA: 100,            // 👈 配合大扩散填补空间
+            RADIUS_EXP: 1.40,
+            SPREAD_BASE: 42.0,     // 👈 极大扩散：彻底打碎点阵感，填满皮肤空隙
+            SPREAD_FEAT: 2.4,      // 👈 适中扩散：平衡边界清晰度与避免“佛珠”感
+            MIN_CNT: 55,           // 👈 密度平衡：既有素描厚重感，又不至于重叠过曝
+            EXTRA: 180,
             FRAME_H: 1.60,
             FRAME_W: 1.60,
             TRAIL: 0.22,
             // 抑制参数优化
             HAIR_THR: -0.42, HAIR_STR: 0.85,
             NECK_THR: 0.45, NECK_STR: 0.40,
-            EDGE_THR: 0.65, EDGE_STR: 0.15   // 👈 继续放宽，找回侧脸边界
+            EDGE_THR: 0.65, EDGE_STR: 0.15
         };
 
         // 五官地标索引参考（用于自适应细节勾勒）
@@ -682,8 +682,8 @@
             300, 293, 334, 296, 336, 285, 295, 282, 283, 276,
             // 鼻子（鼻型核心点）
             168, 6, 197, 195, 5, 4, 1, 19, 94, 2, 102, 331, 20, 242, 462,
-            // 下巴与轮廓线
-            152, 148, 176, 149, 150, 175, 199, 200, 377, 400, 378, 379
+            // 下巴与下颌骨定义线（强化脸部轮廓分离）
+            152, 148, 176, 149, 150, 175, 199, 200, 377, 400, 378, 379, 365, 397, 288, 361, 323, 454, 356, 389, 251, 284, 332, 297, 338, 10, 109, 67, 103, 54, 21, 162, 127, 234, 93, 132, 58, 172, 136, 150, 149, 176, 148
         ];
 
         // 👈 需要消除的中轴线“佛珠”点
@@ -771,15 +771,17 @@
                 var fx = 1 - lm.x;
                 var dx = fx * 2 - 1;
 
-                // 核心策略：中轴点消音 + 极大扩散去珠化
+                // 核心策略：中轴消音 + 随机抖动
                 var count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
-                if (isAxis) count = Math.floor(count * 0.25); // 极大削减中轴粒子
+                // 👈 彻底去掉中竖线：中轴点生成的粒子数量大幅削减，且扩散增加
+                if (isAxis) count = Math.floor(count * 0.2);
 
                 var curSpread = isFeat ? CFG.SPREAD_FEAT : CFG.SPREAD_BASE;
+                if (isAxis) curSpread *= 2.0;
 
-                // 增加更大幅度的随机抖动，彻底打碎地标阵列感
-                var jitterX = (Math.random() - 0.5) * 4.0;
-                var jitterY = (Math.random() - 0.5) * 4.0;
+                // 👈 关键：引入 2-3 像素的发射位置抖动，打碎地标点阵的规整感
+                var jitterX = (Math.random() - 0.5) * 3.5;
+                var jitterY = (Math.random() - 0.5) * 3.5;
 
                 for (var j = 0; j < count; j++) {
                     var ro = Math.sqrt(Math.random()) * curSpread;
