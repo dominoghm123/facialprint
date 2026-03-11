@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>FACIAL PRINT · V0.0.5.1 REFINE</title>
+    <style>
+        /* ── RESET ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            color: #fff
+        }
+
+        #c {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* ── UI TOP ── */
+        #ui-top {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 22px 28px;
+            pointer-events: none;
+            z-index: 20
+        }
+
+        .dot-matrix {
+            display: grid;
+            grid-template-columns: repeat(9, 5px);
+            gap: 3px;
+            margin-bottom: 6px
+        }
+
+        .dm {
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, .15);
+            border-radius: .5px
+        }
+
+        #tl-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            pointer-events: all
+        }
+
+        #qc-link {
+            color: rgba(255, 255, 255, .52);
+            font-size: 12px;
+            letter-spacing: .22em;
+            text-decoration: none;
+            text-transform: uppercase
+        }
+
+        #sound-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, .35);
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: .18em;
+            text-align: left;
+            cursor: pointer
+        }
+
+        .ui-desc {
+            text-align: right;
+            color: rgba(255, 255, 255, .20);
+            font-size: 10px;
+            letter-spacing: .1em;
+            line-height: 1.8;
+            max-width: 260px
+        }
+
+        /* ── SLIDER ── */
+        #slider-wrap {
+            position: fixed;
+            left: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+            pointer-events: all;
+            user-select: none
+        }
+
+        #slider-track-line {
+            position: absolute;
+            left: 7px;
+            top: 0;
+            width: 1px;
+            background: rgba(255, 255, 255, .05)
+        }
+
+        .si {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 10px 0;
+            position: relative
+        }
+
+        .si-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .12);
+            transition: all .3s;
+            z-index: 2
+        }
+
+        .si.active .si-dot {
+            background: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, .32)
+        }
+
+        .si-name {
+            font-size: 9px;
+            letter-spacing: .2em;
+            color: rgba(255, 255, 255, .16);
+            transition: all .28s;
+            text-transform: uppercase
+        }
+
+        .si.active .si-name {
+            color: rgba(255, 255, 255, .75);
+            font-size: 10px;
+            letter-spacing: .25em
+        }
+
+        .si-sub {
+            font-size: 8px;
+            letter-spacing: .1em;
+            color: rgba(255, 255, 255, 0);
+            transition: color .3s;
+            text-transform: uppercase
+        }
+
+        .si.active .si-sub {
+            color: rgba(255, 255, 255, .20)
+        }
+
+        #indicator {
+            position: fixed;
+            left: 25px;
+            width: 11px;
+            height: 11px;
+            border: 1px solid rgba(255, 255, 255, .6);
+            border-radius: 50%;
+            z-index: 21;
+            pointer-events: none;
+            transform: translateY(-50%)
+        }
+
+        /* ── CAPTURE ── */
+        #cap-wrap {
+            position: fixed;
+            right: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer
+        }
+
+        #cap-ring {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, .22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.25s
+        }
+
+        #cap-dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .09)
+        }
+
+        #cap-label {
+            font-size: 8px;
+            letter-spacing: .14em;
+            color: rgba(255, 255, 255, .18)
+        }
+
+        /* ── BARS ── */
+        #status-bl {
+            position: fixed;
+            bottom: 32px;
+            left: 28px;
+            z-index: 20;
+            line-height: 2.4
+        }
+
+        #st-face {
+            font-size: 9px;
+            letter-spacing: .15em;
+            color: rgba(255, 255, 255, .28)
+        }
+
+        #st-expr {
+            font-size: 9px;
+            letter-spacing: .1em;
+            color: rgba(255, 255, 255, .16)
+        }
+
+        #bars-br {
+            position: fixed;
+            bottom: 32px;
+            right: 28px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+            align-items: flex-end
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .bl,
+        .br {
+            font-size: 8px;
+            letter-spacing: .09em;
+            color: rgba(255, 255, 255, .13);
+            width: 38px
+        }
+
+        .bt {
+            width: 110px;
+            height: 1px;
+            background: rgba(255, 255, 255, .06);
+            position: relative
+        }
+
+        .bd {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .4);
+            position: absolute;
+            top: -2px;
+            transform: translateX(-50%);
+            transition: left .14s
+        }
+
+        #footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 9px;
+            z-index: 20
+        }
+
+        #footer span {
+            font-size: 8px;
+            letter-spacing: .12em;
+            color: rgba(255, 255, 255, .13)
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+
+    <div id="ui-top">
+        <div>
+            <div class="dot-matrix" id="dm"></div>
+            <div id="tl-controls">
+                <a id="qc-link" href="#">QCDOMINO</a>
+                <button id="sound-btn">SOUND [OFF]</button>
+            </div>
+        </div>
+        <div class="ui-desc">FACIAL PRINT IS A REAL-TIME<br>PARTICLE RENDERING SYSTEM.</div>
+    </div>
+
+    <div id="slider-wrap">
+        <div id="slider-track-line"></div>
+    </div>
+    <div id="indicator"></div>
+
+    <div id="cap-wrap">
+        <div id="cap-ring">
+            <div id="cap-dot"></div>
+        </div>
+        <div id="cap-label">CAP</div>
+    </div>
+
+    <div id="status-bl">
+        <div id="st-face">○ AWAITING FACE</div>
+        <div id="st-expr">— NEUTRAL</div>
+    </div>
+
+    <div id="bars-br">
+        <div class="bar-row"><span class="bl">COOL</span>
+            <div class="bt">
+                <div class="bd" id="bd-warm"></div>
+            </div><span class="br">WARM</span>
+        </div>
+        <div class="bar-row"><span class="bl">STILL</span>
+            <div class="bt">
+                <div class="bd" id="bd-move"></div>
+            </div><span class="br">ACTIVE</span>
+        </div>
+        <div class="bar-row"><span class="bl">CLOSED</span>
+            <div class="bt">
+                <div class="bd" id="bd-open"></div>
+            </div><span class="br">OPEN</span>
+        </div>
+    </div>
+
+    <div id="footer"><span>© 2026 Qicheng Dai. · V0.0.5.1 REFINE</span></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+    <script>
+        'use strict';
+
+        const CFG = {
+            MIN_SH: 0.005,         // 放极低门槛，照亮面颊
+            GAMMA: 1.35,           // 软化明暗，找回额头
+            RADIUS_MAX: 1.35,      // 粒子基准尺寸
+            RADIUS_EXP: 1.38,      // 尺寸衰减
+            SPREAD_BASE: 48.0,     // 皮肤大范围云雾扩散
+            SPREAD_FEAT: 1.2,      // 特征边界极小扩散（防止溢出）
+            MIN_CNT: 45,           // 基础密度
+            EXTRA: 150,            // 阴影密度
+            FRAME_H: 1.6, FRAME_W: 1.6,
+            EDGE_THR: 0.75         // 几乎不抑制边缘，保留下巴完整性
+        };
+
+        const STYLES = [
+            { name: 'INK', sub: 'DISSOLVED', hFn: s => 212 + s * 16, sFn: s => 4 + s * 22, lFn: s => 2 + Math.pow(s, 1.1) * 82, trail: 0.22 },
+            { name: 'DUST', sub: 'SCATTERED', hFn: s => 30 + s * 12, sFn: s => 6 + s * 26, lFn: s => 3 + Math.pow(s, 1.1) * 80, trail: 0.26 },
+            { name: 'AMBER', sub: 'BURNING', hFn: s => 28 + s * 18, sFn: s => 50 + s * 35, lFn: s => 3 + Math.pow(s, 1.0) * 78, trail: 0.18 },
+            { name: 'AURORA', sub: 'RADIANT', hFn: s => 160 + s * 85, sFn: s => 30 + s * 55, lFn: s => 2 + Math.pow(s, 1.1) * 78, trail: 0.20 },
+            { name: 'VELVET', sub: 'DENSE', hFn: s => 270 + s * 24, sFn: s => 15 + s * 40, lFn: s => 2 + Math.pow(s, 1.0) * 74, trail: 0.28 }
+        ];
+
+        // 索引定义
+        const LIP_O = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61];
+        const LIP_I = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78];
+        const NOSE_C = [168, 6, 197, 195, 5, 1, 4, 94, 2];
+        const NOSE_W = [102, 218, 438, 331];
+        const EYE_LU = [157, 158, 159, 160, 161];
+        const EYE_LL = [153, 154, 155];
+        const EYE_RU = [384, 385, 386, 387, 388];
+        const EYE_RL = [380, 381, 382];
+        const PUPILS = [468, 473]; // 瞳孔中心
+        const PUPIL_B = [469, 470, 471, 472, 474, 475, 476, 477]; // 瞳孔边缘
+
+        const FEAT_LMS = [...LIP_O, ...LIP_I, ...NOSE_C, ...NOSE_W, ...EYE_LU, ...EYE_LL, ...EYE_RU, ...EYE_RL, ...PUPILS, ...PUPIL_B];
+        const AXIS_LMS = [1, 4, 10, 151, 152, 14, 13];
+
+        let canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+        let W, H, FR = {}, dots = [], lastLandmarks = null, curStyle = 0;
+
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+            let fh = H * CFG.FRAME_H, fw = fh * (CFG.FRAME_W / CFG.FRAME_H);
+            FR = { x: (W - fw) * 0.5, y: (H - fh) * 0.5, w: fw, h: fh };
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function buildDotCache(lms) {
+            dots = [];
+            for (let i = 0; i < lms.length; i++) {
+                let lm = lms[i];
+                let isFeat = FEAT_LMS.includes(i);
+                let isAxis = AXIS_LMS.includes(i);
+                let isLowerLid = [...EYE_LL, ...EYE_RL].includes(i);
+
+                // 压缩鼻尖高光，防止“肿大”
+                let zScale = (i === 4 || i === 1) ? 3.8 : 4.6;
+                let sh = Math.max(0, Math.min(1, 0.48 - lm.z * zScale));
+                if (sh < CFG.MIN_SH) continue;
+
+                let fx = 1 - lm.x, dx = fx * 2 - 1, dy = lm.y * 2 - 1;
+
+                // 密度策略
+                let count = CFG.MIN_CNT + Math.floor(sh * CFG.EXTRA);
+                if (isAxis) count *= 0.3;
+                if (isLowerLid) count *= 0.4; // 👈 减淡下眼睑
+                if (PUPILS.includes(i)) count *= 2.5; // 👈 强化瞳孔
+
+                // 扩散策略：特征点极小扩散防止溢出
+                let spread = isFeat ? CFG.SPREAD_FEAT : CFG.SPREAD_BASE;
+                if (isAxis) spread *= 2.0;
+
+                // 抖动打散点阵
+                let jx = (Math.random() - 0.5) * 2.5;
+                let jy = (Math.random() - 0.5) * 2.5;
+
+                for (let j = 0; j < count; j++) {
+                    let ro = Math.sqrt(Math.random()) * spread;
+                    // 👈 鼻子和嘴唇的特殊限制：限制半径，防止溢出边缘
+                    if (isFeat && ([...LIP_O, ...LIP_I, ...NOSE_C, ...NOSE_W].includes(i))) {
+                        ro *= 0.6;
+                    }
+
+                    let ang = Math.random() * Math.PI * 2;
+                    dots.push({
+                        idx: i,
+                        ox: Math.cos(ang) * ro + jx,
+                        oy: Math.sin(ang) * ro + jy,
+                        sh: sh, dx: dx, dy: dy,
+                        isFeat: isFeat,
+                        isPupil: PUPILS.includes(i) || PUPIL_B.includes(i)
+                    });
+                }
+            }
+        }
+
+        function computeDotProps(d, si) {
+            let st = STYLES[si];
+            // 极大弱化边缘抑制，让面颊可见
+            let edge = Math.max(0, Math.abs(d.dx) - CFG.EDGE_THR) * 1.5;
+            let shEff = Math.pow(d.sh, 1.1) * (1 - edge * 0.2);
+
+            // 显色度：提升基础亮度，让最远粒子也肉眼可见
+            let a = (d.isFeat ? 0.94 : 0.65) * (0.12 + shEff * 0.88);
+            if (d.isPupil) a = 1.0;
+
+            let sz = (d.isFeat ? 0.88 : 1.35) * CFG.RADIUS_MAX * Math.pow(shEff, CFG.RADIUS_EXP);
+            if (d.isPupil) sz *= 1.2;
+
+            return { h: st.hFn(shEff), s: st.sFn(shEff), l: st.lFn(shEff), sz, a };
+        }
+
+        // --- Core Loop ---
+        const faceMesh = new FaceMesh({ locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+        faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        faceMesh.onResults(res => {
+            if (res.multiFaceLandmarks && res.multiFaceLandmarks.length) {
+                lastLandmarks = res.multiFaceLandmarks[0];
+                buildDotCache(lastLandmarks);
+                document.getElementById('st-face').innerText = '● FACE DETECTED';
+            } else {
+                document.getElementById('st-face').innerText = '○ AWAITING FACE';
+            }
+        });
+
+        const cam = new Camera(document.createElement('video'), {
+            onFrame: async () => { await faceMesh.send({ image: document.querySelector('video') || document.createElement('video') }) },
+            width: 640, height: 480
+        });
+        // Note: In local env, camera might need user gesture. Usually handled by mediapipe.
+
+        // Manual camera init for browser agent context
+        const videoElement = document.createElement('video');
+        const camera = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+            width: 1280, height: 720
+        });
+        camera.start();
+
+        function draw() {
+            requestAnimationFrame(draw);
+            ctx.fillStyle = `rgba(0,0,0,${STYLES[curStyle].trail})`;
+            ctx.fillRect(0, 0, W, H);
+            if (!dots.length || !lastLandmarks) return;
+
+            for (let i = 0; i < dots.length; i++) {
+                let d = dots[i];
+                let lm = lastLandmarks[d.idx];
+                let px = FR.x + (1 - lm.x) * FR.w + d.ox;
+                let py = FR.y + lm.y * FR.h + d.oy;
+
+                let p = computeDotProps(d, curStyle);
+                if (!p) continue;
+                ctx.fillStyle = `hsla(${p.h},${p.s}%,${p.l}%,${p.a})`;
+                ctx.beginPath();
+                ctx.arc(px, py, p.sz, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        draw();
+
+        // UI Helpers
+        const sw = document.getElementById('slider-wrap');
+        STYLES.forEach((s, i) => {
+            let dv = document.createElement('div');
+            dv.className = 'si' + (i === 0 ? ' active' : '');
+            dv.innerHTML = `<div class="si-dot"></div><div class="si-text"><span class="si-name">${s.name}</span><span class="si-sub">${s.sub}</span></div>`;
+            dv.onclick = () => {
+                document.querySelectorAll('.si').forEach(el => el.classList.remove('active'));
+                dv.classList.add('active');
+                curStyle = i;
+                document.getElementById('indicator').style.top = dv.offsetTop + dv.offsetHeight / 2 + 'px';
+            };
+            sw.appendChild(dv);
+        });
+
+        // Init indicator
+        setTimeout(() => {
+            let act = document.querySelector('.si.active');
+            if (act) document.getElementById('indicator').style.top = act.offsetTop + act.offsetHeight / 2 + 'px';
+        }, 500);
+
+        // Dot Matrix
+        const matrix = document.getElementById('dm');
+        for (let i = 0; i < 81; i++) matrix.appendChild(document.createElement('div')).className = 'dm';
+
+    </script>
+</body>
+
+</html>
