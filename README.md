@@ -1,8 +1,10 @@
+[中文版本](./README_zh.md)
+
 # FACIAL PRINT v0.0.5.3
 
 **FACIAL PRINT** is an experimental real-time expression-reactive particle rendering system that maps human facial dynamics to audiovisual landscapes. 
 
-Created by **Qicheng Dai**, this project explores the intersection of computer vision, generative art, and interactive music.
+Created by **qcdomino**, this project explores the intersection of computer vision, generative art, and interactive music.
 
 ---
 
