@@ -8,6 +8,19 @@ Created by **qcdomino**, this project explores the intersection of computer visi
 
 ---
 
+## 🚀 Getting Started
+
+1.  Open ` https://dominoghm123.github.io/facialprint/` in any modern web browser (Chrome/Edge/Safari).
+2.  Allow camera access.
+3.  Click the **SOUND [OFF]** button to initialize the audio context.
+4.  **Interact**:
+    - **Smile**: Brightens the music and visual colors.
+    - **Move**: Increases the tempo and visual energy.
+    - **Tilt**: Distorts and modulates the sound textures.
+    - **Capture**: Use the right-side button to save your "Facial Print" as a photo or video.
+
+---
+
 ## 📽️ Project Summary
 
 The application uses your webcam to detect 468+ facial landmarks in real-time. These landmarks are transformed into a dense cloud of particles that respond to your movements, expressions, and emotions. Simultaneously, a custom-built Web Audio engine generates a synchronized soundtrack that shifts its melody, rhythm, and texture based on your "warmth" (smile), "activity" (movement), and "openness" (mouth).
@@ -47,20 +60,7 @@ The application uses your webcam to detect 468+ facial landmarks in real-time. T
 
 ---
 
-## 🚀 Getting Started
-
-1.  Open `facial-print-v0.0.5.3.html` in any modern web browser (Chrome/Edge/Safari).
-2.  Allow camera access.
-3.  Click the **SOUND [OFF]** button to initialize the audio context.
-4.  **Interact**:
-    - **Smile**: Brightens the music and visual colors.
-    - **Move**: Increases the tempo and visual energy.
-    - **Tilt**: Distorts and modulates the sound textures.
-    - **Capture**: Use the right-side button to save your "Facial Print" as a photo or video.
-
----
-
 ## 📜 License
 
-© 2026 Qicheng Dai. All Rights Reserved. 
+© 2026 qcdomino. 保留所有权利。 
 The code is provided for educational and portfolio demonstration purposes. Link to [Original Repository](https://github.com/dominoghm123/facialprint).
